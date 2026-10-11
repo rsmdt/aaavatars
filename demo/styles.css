@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --color-ink: #15171a;
+  --color-chip-ink: #333333;
+  --color-muted: #8a8f98;
+  --color-subtle: #777c83;
+  --color-chip: #f1f2f3;
+  --color-chip-hover: #e7e8ea;
+  --color-chip-active: #e1e2e5;
+  --color-line: #ececec;
+  --color-canvas: #f8f8f6;
+  --color-dot: #d7d9dc;
+  --color-track: #d4d6d9;
+  --color-knob: #5f646c;
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-ink;
+  }
+}
