@@ -2,7 +2,27 @@
   "name": "aaavatars",
   "version": "0.1.0",
   "description": "Deterministic 2D character avatars with a play() animation API",
+  "keywords": [
+    "avatar",
+    "react",
+    "svg",
+    "ai-agent",
+    "agent-avatar",
+    "animation",
+    "identicon",
+    "generative",
+    "deterministic"
+  ],
+  "author": "Rudolf Schmidt",
   "license": "MIT",
+  "homepage": "https://rsmdt.github.io/aaavatars/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rsmdt/aaavatars.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rsmdt/aaavatars/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [
@@ -23,8 +43,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.build.json",
+    "build:demo": "vite build --base=/aaavatars/ --outDir demo-dist",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "peerDependencies": {
     "react": ">=18",
