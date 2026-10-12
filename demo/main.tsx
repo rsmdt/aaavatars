@@ -25,9 +25,9 @@ import {
   type Shape,
   formatAvatarValue,
 } from "../src/index.js";
+import packageJson from "../package.json" with { type: "json" };
 import { renderAvatarSvg } from "../src/server.js";
 
-const VERSION = "0.2.0";
 
 const NAMES = [
   "Chief of Staff",
@@ -219,7 +219,7 @@ function Demo() {
         aaavatars / SVG + React / play() API
       </div>
       <div className="absolute top-5 right-7 rounded-full border border-[#e0e1e3] bg-white/80 px-[7px] py-[3px] text-[10px] text-subtle">
-        Demo {VERSION}
+        Demo {packageJson.version}
       </div>
 
       <div className="mb-6 grid place-items-center">
