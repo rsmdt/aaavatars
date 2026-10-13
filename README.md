@@ -2,6 +2,14 @@
 
 Deterministic 2D character avatars for AI agents. Same name, same character. A `status` prop drives looping states and `play()` triggers one-shot reactions.
 
+[Live demo](https://rsmdt.github.io/aaavatars/)
+
+![aaavatars demo](https://raw.githubusercontent.com/rsmdt/aaavatars/main/docs/demo.gif)
+
+```sh
+npm install aaavatars
+```
+
 ```tsx
 import { Avatar, AvatarGroup, type AvatarHandle, parseAvatarValue } from "aaavatars";
 
