@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   type MouseEvent,
   type PointerEvent,
   type ReactNode,
@@ -36,6 +37,7 @@ import {
   createSpec,
   shadeHex,
 } from "./spec.js";
+import { watchPointer } from "./pointer.js";
 import { AVATAR_CSS } from "./styles.js";
 
 export const AVATAR_STATUSES = [
@@ -81,7 +83,6 @@ export interface AvatarProps {
   status?: AvatarStatus;
 }
 
-const LOOK_RANGE = 4;
 const DRAG_THRESHOLD = 3;
 const HOLD_MS = 600;
 const SQUISH_LIMIT = 40;
@@ -209,18 +210,11 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
 
   useImperativeHandle(ref, () => ({ play }), [play]);
 
-  function lookAt(event: PointerEvent<SVGSVGElement>) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2 * LOOK_RANGE;
-    const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2 * LOOK_RANGE;
-    event.currentTarget.style.setProperty("--aaa-look-x", `${x}px`);
-    event.currentTarget.style.setProperty("--aaa-look-y", `${y}px`);
-  }
-
-  function resetLook(event: PointerEvent<SVGSVGElement>) {
-    event.currentTarget.style.removeProperty("--aaa-look-x");
-    event.currentTarget.style.removeProperty("--aaa-look-y");
-  }
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!tracksPointer || !svg || prefersReducedMotion()) return;
+    return watchPointer(svg);
+  }, [tracksPointer]);
 
   function startDrag(event: PointerEvent<SVGSVGElement>) {
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -287,21 +281,15 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       data-motion={motion ? undefined : "off"}
       data-status={status}
       height={size}
+      overflow={framed ? undefined : "visible"}
       role="img"
+      style={{ "--aaa-phase": spec.phase, "--aaa-tempo": spec.tempo } as CSSProperties}
       viewBox="0 0 100 100"
       width={size}
       onClick={interactive ? handleClick : undefined}
       onPointerCancel={interactive ? endDrag : undefined}
       onPointerDown={interactive ? startDrag : undefined}
-      onPointerLeave={tracksPointer ? resetLook : undefined}
-      onPointerMove={
-        tracksPointer || interactive
-          ? (event) => {
-              if (tracksPointer) lookAt(event);
-              if (interactive) moveDrag(event);
-            }
-          : undefined
-      }
+      onPointerMove={interactive ? moveDrag : undefined}
       onPointerUp={interactive ? endDrag : undefined}
     >
       {label ? <title>{label}</title> : null}

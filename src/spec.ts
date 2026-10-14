@@ -19,6 +19,8 @@ export const FILLS = ["solid", "gradient"] as const;
 
 const BLINK_MIN_SECONDS = 5;
 const BLINK_SPREAD_SECONDS = 4;
+const TEMPO_MIN = 0.85;
+const TEMPO_SPREAD = 0.3;
 
 export const DEFAULT_COLORS = ["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51"];
 
@@ -40,8 +42,10 @@ export interface AvatarSpec {
   mouth: Mouth;
   offsetX: number;
   offsetY: number;
+  phase: number;
   rotate: number;
   shape: Shape;
+  tempo: number;
 }
 
 export interface SpecOptions {
@@ -80,6 +84,10 @@ function roundTenth(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
+function roundHundredth(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 function signedRange(random: () => number, limit: number): number {
   return Math.round((random() * 2 - 1) * limit);
 }
@@ -111,6 +119,8 @@ export function createSpec(name: string, options: SpecOptions = {}): AvatarSpec 
   const accent = accentCandidates.length ? pick(accentCandidates, random) : (colors[0] as string);
   const blinkDuration = roundTenth(BLINK_MIN_SECONDS + random() * BLINK_SPREAD_SECONDS);
   const blinkDelay = -roundTenth(random() * blinkDuration);
+  const tempo = roundHundredth(TEMPO_MIN + random() * TEMPO_SPREAD);
+  const phase = roundHundredth(random() * 0.99);
   const background = options.background ?? (colors[backgroundIndex] as string);
   const body = options.body ?? (colors[bodyIndex] as string);
   return {
@@ -125,8 +135,10 @@ export function createSpec(name: string, options: SpecOptions = {}): AvatarSpec 
     mouth: options.mouth ?? "none",
     offsetX,
     offsetY,
+    phase,
     rotate,
     shape: options.shape ?? shape,
+    tempo,
   };
 }
 

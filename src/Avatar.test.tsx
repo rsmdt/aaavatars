@@ -148,16 +148,54 @@ describe("Avatar", () => {
     expect(svg.dataset.motion).toBe("off");
   });
 
-  it("follows the pointer only when look is on", () => {
+  it("follows the pointer anywhere on the page only when look is on", () => {
+    stubMatchMedia(false);
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
     const { container, rerender } = render(<Avatar name="a" />);
     const svg = () => container.querySelector("svg")!;
-    fireEvent.pointerMove(svg(), { clientX: 10, clientY: 10 });
-    expect(svg().style.getPropertyValue("--aaa-look-x")).not.toBe("");
+    fireEvent.pointerMove(window, { clientX: 400, clientY: 300 });
+    expect(Number.parseFloat(svg().style.getPropertyValue("--aaa-look-x"))).toBeGreaterThan(0);
+    expect(Number.parseFloat(svg().style.getPropertyValue("--aaa-look-y"))).toBeGreaterThan(0);
 
     rerender(<Avatar look={false} name="b" />);
     svg().style.removeProperty("--aaa-look-x");
-    fireEvent.pointerMove(svg(), { clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(window, { clientX: 400, clientY: 300 });
     expect(svg().style.getPropertyValue("--aaa-look-x")).toBe("");
+  });
+
+  it("ignores touch pointers and reduced motion when following", () => {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
+    stubMatchMedia(false);
+    const { container, unmount } = render(<Avatar name="a" />);
+    fireEvent.pointerMove(window, { clientX: 400, clientY: 300, pointerType: "touch" });
+    expect(container.querySelector("svg")!.style.getPropertyValue("--aaa-look-x")).toBe("");
+    unmount();
+
+    stubMatchMedia(true);
+    const reduced = render(<Avatar name="a" />);
+    fireEvent.pointerMove(window, { clientX: 400, clientY: 300 });
+    expect(reduced.container.querySelector("svg")!.style.getPropertyValue("--aaa-look-x")).toBe("");
+  });
+
+  it("sets a per-name tempo and phase for its looping animations", () => {
+    const { container, rerender } = render(<Avatar name="Research" />);
+    const svg = () => container.querySelector("svg")!;
+    const first = [
+      svg().style.getPropertyValue("--aaa-tempo"),
+      svg().style.getPropertyValue("--aaa-phase"),
+    ];
+    expect(Number.parseFloat(first[0]!)).toBeGreaterThan(0);
+    rerender(<Avatar name="Inbox Assistant" />);
+    expect([
+      svg().style.getPropertyValue("--aaa-tempo"),
+      svg().style.getPropertyValue("--aaa-phase"),
+    ]).not.toEqual(first);
   });
 
   it("reacts to clicks only when interactive", () => {

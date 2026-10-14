@@ -52,6 +52,18 @@ describe("createSpec", () => {
     expect(new Set(specs.map((spec) => spec.blinkDelay)).size).toBeGreaterThan(20);
   });
 
+  it("varies tempo and phase slightly per name without moving the blink", () => {
+    const specs = Array.from({ length: 50 }, (_, index) => createSpec(`agent-${index}`));
+    for (const spec of specs) {
+      expect(spec.tempo).toBeGreaterThanOrEqual(0.85);
+      expect(spec.tempo).toBeLessThanOrEqual(1.15);
+      expect(spec.phase).toBeGreaterThanOrEqual(0);
+      expect(spec.phase).toBeLessThan(1);
+    }
+    expect(new Set(specs.map((spec) => spec.tempo)).size).toBeGreaterThan(15);
+    expect(createSpec("Research")).toMatchObject({ blinkDelay: -3.1, blinkDuration: 7.8 });
+  });
+
   it("picks an accent that differs from body and background", () => {
     for (let index = 0; index < 50; index += 1) {
       const spec = createSpec(`agent-${index}`);

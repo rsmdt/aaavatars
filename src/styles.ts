@@ -10,17 +10,17 @@ export const AVATAR_CSS = `
 .aaa[data-interactive]:active{cursor:grabbing}
 .aaa-look{transform:translate(var(--aaa-look-x,0px),var(--aaa-look-y,0px));transition:transform .25s ease-out}
 .aaa-blink{animation:aaa-blink 7s infinite}
-.aaa[data-status=idle] .aaa-body-motion{animation:aaa-bob 3.6s ease-in-out infinite}
-.aaa[data-status=thinking] .aaa-body-motion{animation:aaa-sway 3s ease-in-out infinite}
-.aaa[data-status=thinking] .aaa-eyes-motion{transform:translate(-5px,-6px);animation:aaa-ponder 2.4s ease-in-out infinite}
-.aaa[data-status=working] .aaa-body-motion{animation:aaa-bob .9s ease-in-out infinite}
-.aaa[data-status=working] .aaa-eyes-motion{animation:aaa-scan 1.1s ease-in-out infinite}
-.aaa[data-status=waiting] .aaa-body-motion{animation:aaa-hop 1.6s ease-out infinite}
+.aaa[data-status=idle] .aaa-body-motion{animation:aaa-drift calc(11s*var(--aaa-tempo,1)) ease-in-out calc(-11s*var(--aaa-phase,0)) infinite}
+.aaa[data-status=thinking] .aaa-body-motion{animation:aaa-sway calc(3s*var(--aaa-tempo,1)) ease-in-out calc(-3s*var(--aaa-phase,0)) infinite}
+.aaa[data-status=thinking] .aaa-eyes-motion{transform:translate(-5px,-6px);animation:aaa-ponder calc(2.4s*var(--aaa-tempo,1)) ease-in-out calc(-2.4s*var(--aaa-phase,0)) infinite}
+.aaa[data-status=working] .aaa-body-motion{animation:aaa-bob calc(0.9s*var(--aaa-tempo,1)) ease-in-out calc(-0.9s*var(--aaa-phase,0)) infinite}
+.aaa[data-status=working] .aaa-eyes-motion{animation:aaa-scan calc(1.1s*var(--aaa-tempo,1)) ease-in-out calc(-1.1s*var(--aaa-phase,0)) infinite}
+.aaa[data-status=waiting] .aaa-body-motion{animation:aaa-hop calc(1.6s*var(--aaa-tempo,1)) ease-out calc(-1.6s*var(--aaa-phase,0)) infinite}
 .aaa[data-status=waiting] .aaa-eyes-motion{transform:scale(1.18)}
 .aaa[data-status=error] .aaa-body-motion{transform:rotate(-10deg)}
 .aaa[data-status=error] .aaa-eyes-motion{transform:scaleY(.25)}
 .aaa[data-status=error] .aaa-blink{animation:none}
-.aaa[data-status=sleeping] .aaa-body-motion{animation:aaa-breathe 4.2s ease-in-out infinite}
+.aaa[data-status=sleeping] .aaa-body-motion{animation:aaa-breathe calc(4.2s*var(--aaa-tempo,1)) ease-in-out calc(-4.2s*var(--aaa-phase,0)) infinite}
 .aaa[data-status=sleeping] .aaa-eyes-motion{transform:translateY(2px) scaleY(.12)}
 .aaa[data-status=sleeping] .aaa-blink{animation:none}
 .aaa[data-status=working] .aaa-antenna-tip{animation:aaa-signal .9s ease-in-out infinite}
@@ -45,6 +45,7 @@ export const AVATAR_CSS = `
 .aaa[data-blink=off] .aaa-blink{animation:none}
 .aaa[data-motion=off] *{animation:none!important}
 @keyframes aaa-blink{0%,28%,32%,90%,94%,100%{transform:scaleY(1)}30%,92%{transform:scaleY(.1)}}
+@keyframes aaa-drift{0%,100%{transform:translate(0,0) rotate(0deg) scale(1)}20%{transform:translate(4px,-3px) rotate(5deg) scale(1.02,.98)}45%{transform:translate(-2px,-5px) rotate(-3deg) scale(.98,1.02)}70%{transform:translate(-5px,-1px) rotate(-6deg) scale(1.02,.98)}85%{transform:translate(-1px,1px) rotate(2deg) scale(1)}}
 @keyframes aaa-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes aaa-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
 @keyframes aaa-ponder{0%,100%{transform:translate(-5px,-6px)}50%{transform:translate(5px,-6px)}}

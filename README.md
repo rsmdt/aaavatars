@@ -40,7 +40,7 @@ await avatar.current?.play("done");
 | `blink` / `look` / `motion` | turn blinking, pointer following or looping off |
 | `interactive` | click, double-click, drag-to-squish and press-and-hold reactions |
 
-Unset `shape`, `eyes` and colours come from the name. `mouth` and `accessory` stay off until you set them. Each name blinks on its own rhythm, in CSS only.
+Unset `shape`, `eyes` and colours come from the name. `mouth` and `accessory` stay off until you set them. Each name blinks, drifts and loops at its own slightly different tempo and phase, in CSS only. With `look`, eyes follow a mouse or pen anywhere on the page through one shared listener, updated once per frame.
 
 `play(event)` accepts `acknowledge`, `handoff`, `done`, `success`, `failure`, `surprise`, `wake` and resolves when the animation ends. Under `prefers-reduced-motion`, or while the page is hidden, it resolves immediately.
 
