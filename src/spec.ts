@@ -17,19 +17,8 @@ export const ACCESSORIES = ["none", "antenna", "sprout", "hat", "glasses", "bowt
 
 export const FILLS = ["solid", "gradient"] as const;
 
-const HASHED_MOUTHS = ["none", "none", "none", "smile", "flat", "open"] as const;
-
-const HASHED_ACCESSORIES = [
-  "none",
-  "none",
-  "none",
-  "none",
-  "antenna",
-  "sprout",
-  "hat",
-  "glasses",
-  "bowtie",
-] as const;
+const BLINK_MIN_SECONDS = 5;
+const BLINK_SPREAD_SECONDS = 4;
 
 export const DEFAULT_COLORS = ["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51"];
 
@@ -43,6 +32,8 @@ export interface AvatarSpec {
   accent: string;
   accessory: Accessory;
   background: string;
+  blinkDelay: number;
+  blinkDuration: number;
   body: string;
   eyeColor: string;
   eyes: Eyes;
@@ -85,6 +76,10 @@ function pick<T>(items: readonly T[], random: () => number): T {
   return items[Math.floor(random() * items.length)] as T;
 }
 
+function roundTenth(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 function signedRange(random: () => number, limit: number): number {
   return Math.round((random() * 2 - 1) * limit);
 }
@@ -110,22 +105,24 @@ export function createSpec(name: string, options: SpecOptions = {}): AvatarSpec 
   const offsetX = signedRange(random, 6);
   const offsetY = signedRange(random, 5);
   const rotate = signedRange(random, 12);
-  const mouth = pick(HASHED_MOUTHS, random);
-  const accessory = pick(HASHED_ACCESSORIES, random);
   const accentCandidates = colors.filter(
     (_, index) => index !== bodyIndex && index !== backgroundIndex,
   );
   const accent = accentCandidates.length ? pick(accentCandidates, random) : (colors[0] as string);
+  const blinkDuration = roundTenth(BLINK_MIN_SECONDS + random() * BLINK_SPREAD_SECONDS);
+  const blinkDelay = -roundTenth(random() * blinkDuration);
   const background = options.background ?? (colors[backgroundIndex] as string);
   const body = options.body ?? (colors[bodyIndex] as string);
   return {
     accent,
-    accessory: options.accessory ?? accessory,
+    accessory: options.accessory ?? "none",
     background,
+    blinkDelay,
+    blinkDuration,
     body,
     eyeColor: relativeLuminance(body) > 0.4 ? "#141414" : "#FFFFFF",
     eyes: options.eyes ?? eyes,
-    mouth: options.mouth ?? mouth,
+    mouth: options.mouth ?? "none",
     offsetX,
     offsetY,
     rotate,

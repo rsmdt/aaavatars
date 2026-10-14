@@ -71,11 +71,13 @@ function capitalize(value: string): string {
 }
 
 function Choice<T extends string>({
+  emptyLabel = "Auto",
   label,
   options,
   value,
   onChange,
 }: {
+  emptyLabel?: string;
   label: string;
   options: readonly T[];
   value: T | undefined;
@@ -89,7 +91,7 @@ function Choice<T extends string>({
         value={value ?? ""}
         onChange={(event) => onChange((event.target.value || undefined) as T | undefined)}
       >
-        <option value="">Auto</option>
+        <option value="">{emptyLabel}</option>
         {options.map((option) => (
           <option key={option} value={option}>
             {capitalize(option)}
@@ -366,10 +368,17 @@ function Demo() {
           </label>
           <Choice label="Shape" options={SHAPES} value={shape} onChange={setShape} />
           <Choice label="Eyes" options={EYES} value={eyes} onChange={setEyes} />
-          <Choice label="Mouth" options={MOUTHS} value={mouth} onChange={setMouth} />
           <Choice
+            emptyLabel="None"
+            label="Mouth"
+            options={MOUTHS.filter((option) => option !== "none")}
+            value={mouth}
+            onChange={setMouth}
+          />
+          <Choice
+            emptyLabel="None"
             label="Accessory"
-            options={ACCESSORIES}
+            options={ACCESSORIES.filter((option) => option !== "none")}
             value={accessory}
             onChange={setAccessory}
           />

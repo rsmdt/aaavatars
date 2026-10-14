@@ -193,8 +193,27 @@ describe("Avatar", () => {
     expect(container.querySelector("radialGradient")).not.toBeNull();
   });
 
+  it("draws no accessory and no mouth when they are omitted", () => {
+    for (const name of ["a", "b", "Research", "Inbox Assistant", "Chief of Staff"]) {
+      const { container, unmount } = render(<Avatar name={name} />);
+      expect(container.querySelector(".aaa-accessory")).toBeNull();
+      expect(container.querySelector(".aaa-mouth-rest")).toBeNull();
+      unmount();
+    }
+  });
+
+  it("blinks on a per-name rhythm with a staggered start", () => {
+    const { container, rerender } = render(<Avatar name="Research" />);
+    const blink = () => container.querySelector<SVGGElement>(".aaa-blink")!;
+    const first = [blink().style.animationDuration, blink().style.animationDelay];
+    expect(first[0]).toMatch(/^\d+(\.\d+)?s$/);
+    expect(first[1]).toMatch(/^-\d+(\.\d+)?s$|^0s$/);
+    rerender(<Avatar name="Inbox Assistant" />);
+    expect([blink().style.animationDuration, blink().style.animationDelay]).not.toEqual(first);
+  });
+
   it("draws the chosen accessory", () => {
-    const { container, rerender } = render(<Avatar accessory="none" name="a" />);
+    const { container, rerender } = render(<Avatar name="a" />);
     expect(container.querySelector(".aaa-antenna-tip")).toBeNull();
     rerender(<Avatar accessory="antenna" name="a" />);
     expect(container.querySelector(".aaa-antenna-tip")).not.toBeNull();

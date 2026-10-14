@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACCESSORIES, DEFAULT_COLORS, EYES, MOUTHS, SHAPES, createSpec } from "./spec.js";
+import { DEFAULT_COLORS, EYES, SHAPES, createSpec } from "./spec.js";
 
 describe("createSpec", () => {
   it("keeps the avatars generated before mouths and accessories existed", () => {
@@ -34,13 +34,22 @@ describe("createSpec", () => {
     });
   });
 
-  it("hashes mouths and accessories with none as the common outcome", () => {
-    const specs = Array.from({ length: 200 }, (_, index) => createSpec(`agent-${index}`));
-    const withoutAccessory = specs.filter((spec) => spec.accessory === "none").length;
-    expect(withoutAccessory).toBeGreaterThan(60);
-    expect(withoutAccessory).toBeLessThan(140);
-    expect(new Set(specs.map((spec) => spec.accessory)).size).toBe(ACCESSORIES.length);
-    expect(new Set(specs.map((spec) => spec.mouth)).size).toBe(MOUTHS.length);
+  it("leaves mouth and accessory off unless asked", () => {
+    for (let index = 0; index < 50; index += 1) {
+      expect(createSpec(`agent-${index}`)).toMatchObject({ accessory: "none", mouth: "none" });
+    }
+  });
+
+  it("gives each name its own blink rhythm and phase", () => {
+    const specs = Array.from({ length: 50 }, (_, index) => createSpec(`agent-${index}`));
+    for (const spec of specs) {
+      expect(spec.blinkDuration).toBeGreaterThanOrEqual(5);
+      expect(spec.blinkDuration).toBeLessThanOrEqual(9);
+      expect(spec.blinkDelay).toBeLessThanOrEqual(0);
+      expect(spec.blinkDelay).toBeGreaterThan(-spec.blinkDuration);
+    }
+    expect(new Set(specs.map((spec) => spec.blinkDuration)).size).toBeGreaterThan(20);
+    expect(new Set(specs.map((spec) => spec.blinkDelay)).size).toBeGreaterThan(20);
   });
 
   it("picks an accent that differs from body and background", () => {

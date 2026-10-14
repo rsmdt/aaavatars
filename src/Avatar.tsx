@@ -386,7 +386,13 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
                         </text>
                       ) : (
                         <g className="aaa-eyes-motion">
-                          <g className="aaa-blink">
+                          <g
+                            className="aaa-blink"
+                            style={{
+                              animationDelay: `${spec.blinkDelay}s`,
+                              animationDuration: `${spec.blinkDuration}s`,
+                            }}
+                          >
                             <EyePair eyes={spec.eyes} gap={geometry.eyeGap} y={geometry.eyeY} />
                           </g>
                         </g>

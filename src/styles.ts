@@ -9,7 +9,7 @@ export const AVATAR_CSS = `
 .aaa[data-interactive]{cursor:grab;touch-action:none}
 .aaa[data-interactive]:active{cursor:grabbing}
 .aaa-look{transform:translate(var(--aaa-look-x,0px),var(--aaa-look-y,0px));transition:transform .25s ease-out}
-.aaa-blink{animation:aaa-blink 4.6s infinite}
+.aaa-blink{animation:aaa-blink 7s infinite}
 .aaa[data-status=idle] .aaa-body-motion{animation:aaa-bob 3.6s ease-in-out infinite}
 .aaa[data-status=thinking] .aaa-body-motion{animation:aaa-sway 3s ease-in-out infinite}
 .aaa[data-status=thinking] .aaa-eyes-motion{transform:translate(-5px,-6px);animation:aaa-ponder 2.4s ease-in-out infinite}
@@ -44,7 +44,7 @@ export const AVATAR_CSS = `
 .aaa[data-status=sleeping] .aaa-accessory:is([data-accessory=hat],[data-accessory=glasses]){transform:translateY(5px)}
 .aaa[data-blink=off] .aaa-blink{animation:none}
 .aaa[data-motion=off] *{animation:none!important}
-@keyframes aaa-blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes aaa-blink{0%,28%,32%,90%,94%,100%{transform:scaleY(1)}30%,92%{transform:scaleY(.1)}}
 @keyframes aaa-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes aaa-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
 @keyframes aaa-ponder{0%,100%{transform:translate(-5px,-6px)}50%{transform:translate(5px,-6px)}}
