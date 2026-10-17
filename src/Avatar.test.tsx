@@ -3,6 +3,7 @@ import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Avatar, type AvatarHandle } from "./Avatar.js";
+import { AVATAR_CSS } from "./styles.js";
 
 function stubMatchMedia(reduced: boolean) {
   vi.stubGlobal(
@@ -33,11 +34,236 @@ afterEach(() => {
 });
 
 describe("Avatar", () => {
-  it("exposes the status for the CSS loops", () => {
-    const { container, rerender } = render(<Avatar name="a" status="thinking" />);
-    expect(container.querySelector("svg")?.dataset.status).toBe("thinking");
-    rerender(<Avatar name="a" status="error" />);
-    expect(container.querySelector("svg")?.dataset.status).toBe("error");
+  it("exposes activity, expression and gaze for the CSS loops", () => {
+    const { container, rerender } = render(<Avatar name="a" />);
+    const data = () => ({ ...container.querySelector("svg")!.dataset });
+    expect(data()).toMatchObject({ activity: "idle", expression: "neutral", gaze: "follow" });
+    rerender(<Avatar activity="working" expression="love" name="a" />);
+    expect(data()).toMatchObject({ activity: "working", expression: "love", gaze: "scan" });
+    rerender(<Avatar activity="working" gaze="wander" name="a" />);
+    expect(data().gaze).toBe("wander");
+  });
+
+  it("moves the gaze on its own element so activity eye shapes survive any gaze", () => {
+    const { container } = render(<Avatar activity="sleeping" gaze="scan" name="a" />);
+    expect(container.querySelector(".aaa-gaze > .aaa-eyes-motion")).not.toBeNull();
+    expect(AVATAR_CSS).not.toMatch(/aaa-eyes-motion\{[^}]*animation/);
+  });
+
+  it("lets a non-neutral expression own the mouth over the activity", () => {
+    expect(AVATAR_CSS).not.toMatch(/data-activity=\w+\] \.aaa-mood-/);
+    expect(AVATAR_CSS).toMatch(/\.aaa:not\(\[data-expression=neutral\]\) \.aaa-mouth-rest\{opacity:0\}/);
+  });
+
+  it("leans the eyes into one heart for love, whatever the activity", () => {
+    const { container } = render(<Avatar activity="error" expression="love" name="a" />);
+    expect(container.querySelectorAll(".aaa-eye")).toHaveLength(2);
+    expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-l{transform:translateX(");
+    expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-r{transform:translateX(");
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=error][data-expression=neutral] .aaa-cross{transform:none");
+  });
+
+  it("gives each eye a top and bottom lid scaled to its height", () => {
+    const { container } = render(<Avatar eyes="tall" name="a" />);
+    const lids = [...container.querySelectorAll<SVGRectElement>(".aaa-lid")];
+    expect(lids.map((lid) => lid.getAttribute("class"))).toEqual([
+      "aaa-lid aaa-lid-top aaa-lid-l",
+      "aaa-lid aaa-lid-bottom aaa-lid-l",
+      "aaa-lid aaa-lid-top aaa-lid-r",
+      "aaa-lid aaa-lid-bottom aaa-lid-r",
+    ]);
+    expect(lids.every((lid) => lid.dataset.h === "11")).toBe(true);
+  });
+
+  it("expresses every non-neutral expression and the closed activities through the lids", () => {
+    for (const state of [
+      "data-expression=happy] .aaa-lid-bottom",
+      "data-expression=sad] .aaa-lid-top.aaa-lid-l",
+      "data-expression=sad] .aaa-lid-top.aaa-lid-r",
+      "data-expression=confused] .aaa-lid-top.aaa-lid-r",
+      "data-activity=sleeping] .aaa-lid-top",
+      "data-activity=sleeping] .aaa-lid-bottom",
+    ]) {
+      expect(AVATAR_CSS).toContain(state);
+    }
+    expect(AVATAR_CSS.indexOf(".aaa:not([data-expression=neutral]) .aaa-lid{transform:none}")).toBeGreaterThan(
+      AVATAR_CSS.indexOf("[data-activity=sleeping] .aaa-lid-bottom"),
+    );
+  });
+
+  it("morphs the eyes into a >_ prompt with a blinking cursor while coding", () => {
+    const { container } = render(<Avatar activity="coding" name="a" />);
+    expect(container.querySelectorAll(".aaa-eye")).toHaveLength(2);
+    expect(container.querySelector(".aaa-eye-l + path.aaa-chevron")).not.toBeNull();
+    expect(container.querySelector(".aaa-eye-r + rect.aaa-cursor")).not.toBeNull();
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+    expect(AVATAR_CSS).toContain(
+      ".aaa:is([data-activity=coding],[data-activity=error])[data-expression=neutral] .aaa-eye{transform:scale(0)}",
+    );
+    expect(AVATAR_CSS).toContain(
+      ".aaa[data-activity=coding][data-expression=neutral] .aaa-chevron{transform:translateX(calc((var(--aaa-gap) - 11.5)*1px))}",
+    );
+    expect(AVATAR_CSS).toContain(
+      ".aaa[data-activity=coding][data-expression=neutral] .aaa-cursor{transform:translateX(calc((10.5 - var(--aaa-gap))*1px));animation:aaa-caret",
+    );
+  });
+
+  it("falls asleep and wakes up with the lid sequences, but not on mount", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const topLidFrames = () =>
+      (animate.mock.calls as unknown as [Keyframe[]][])
+        .filter((_, index) => (animate.mock.contexts[index] as Element).classList.contains("aaa-lid-top"))
+        .map(([frames]) => frames);
+    const { container, rerender } = render(<Avatar activity="sleeping" eyes="dot" name="a" />);
+    expect(animate).not.toHaveBeenCalled();
+
+    rerender(<Avatar activity="idle" eyes="dot" name="a" />);
+    expect(topLidFrames()).toHaveLength(2);
+    expect(topLidFrames()[0]![0]).toMatchObject({ offset: 0, transform: `translateY(${(0.85 * 7).toFixed(2)}px) rotate(0deg)` });
+    expect(topLidFrames()[0]!.at(-1)).not.toHaveProperty("transform");
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("wake");
+
+    animate.mockClear();
+    rerender(<Avatar activity="sleeping" eyes="dot" name="a" />);
+    expect(topLidFrames()).toHaveLength(2);
+    expect(topLidFrames()[0]!.at(-1)).not.toHaveProperty("transform");
+    const bodyIndex = animate.mock.contexts.findIndex((element) =>
+      (element as Element).classList.contains("aaa-react"),
+    );
+    expect((animate.mock.calls[bodyIndex] as unknown as [Keyframe[]])[0][0]).toMatchObject({
+      offset: 0,
+      transform: "translateY(0)",
+    });
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=sleeping] .aaa-lid-top{transform:translateY(calc(var(--aaa-eye-h)*.85px))}");
+  });
+
+  it("turns both eyes into crosses during an error", () => {
+    const { container } = render(<Avatar activity="error" name="a" />);
+    expect(container.querySelectorAll(".aaa-eye + .aaa-glyph ~ .aaa-cross")).toHaveLength(2);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+  });
+
+  it("looks straight out with one eye wider while asking", () => {
+    const { container } = render(<Avatar activity="asking" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=asking][data-expression=neutral] .aaa-eye-r{transform:scale(1.25)}");
+    expect(AVATAR_CSS).not.toMatch(/data-activity=asking\][^{]*\.aaa-blink/);
+  });
+
+  it("reads line by line while reading", () => {
+    const { container } = render(<Avatar activity="reading" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("read");
+    const read = AVATAR_CSS.match(/@keyframes aaa-read\{(.*?)\}\}/)![1]!;
+    for (const line of ["-2px", "0.5px", "3px"]) expect(read).toContain(`translate(-5px,${line})`);
+    expect(AVATAR_CSS).toContain(".aaa[data-gaze=read] .aaa-gaze{animation:aaa-read");
+  });
+
+  it("sweeps the eyes once when an error starts, but not on mount", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const { container, rerender } = render(<Avatar activity="error" name="a" />);
+    expect(animate).not.toHaveBeenCalled();
+    rerender(<Avatar activity="idle" name="a" />);
+    rerender(<Avatar activity="error" name="a" />);
+    expect(animate).toHaveBeenCalled();
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("error");
+  });
+
+  it("settles to neutral before a played reaction, but reacts at once to a click", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} interactive name="a" />);
+    const bodyCall = () => {
+      const index = animate.mock.contexts.findIndex((element) =>
+        (element as Element).classList.contains("aaa-react"),
+      );
+      return animate.mock.calls[index] as unknown as [Keyframe[], KeyframeAnimationOptions];
+    };
+
+    void ref.current!.play("acknowledge");
+    const [prepared, preparedTiming] = bodyCall();
+    expect(prepared[0]).not.toHaveProperty("transform");
+    expect(prepared[1]).toMatchObject({ transform: "none" });
+    expect(preparedTiming).toMatchObject({ duration: 500 + 920, easing: "linear" });
+
+    animate.mockClear();
+    fireEvent.click(container.querySelector("svg")!);
+    const [immediate, immediateTiming] = bodyCall();
+    expect(immediate[0]).toMatchObject({ offset: 0, transform: "translateY(0)" });
+    expect(immediateTiming).toMatchObject({ duration: 920 });
+  });
+
+  it("centres the gaze and holds blinking while reacting, and clears the flag after", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} name="a" />);
+    const playing = ref.current!.play("blocked");
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("blocked");
+    expect(AVATAR_CSS).toContain(".aaa[data-reacting] .aaa-gaze,.aaa[data-reacting] .aaa-blink,.aaa[data-reacting] .aaa-eye{animation:none}");
+    await act(async () => {
+      finishAll();
+      await playing;
+    });
+    expect(container.querySelector("svg")!.dataset.reacting).toBeUndefined();
+    expect(["0", "0.41", "0.7"]).toContain(
+      container.querySelector("svg")!.style.getPropertyValue("--aaa-gaze-phase"),
+    );
+  });
+
+  it("leans each eye into the heart while playing love", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    render(<Avatar ref={ref} name="a" />);
+    void ref.current!.play("love");
+    const eyes = animate.mock.contexts.filter((element) =>
+      (element as Element).classList.contains("aaa-eye"),
+    );
+    expect(eyes).toHaveLength(2);
+  });
+
+  it("pauses its loops while offscreen", () => {
+    let report: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          report = callback;
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const { container } = render(<Avatar name="a" />);
+    const svg = container.querySelector("svg")!;
+    act(() => report([{ isIntersecting: false, target: svg } as unknown as IntersectionObserverEntry], {} as IntersectionObserver));
+    expect(svg.hasAttribute("data-offscreen")).toBe(true);
+    act(() => report([{ isIntersecting: true, target: svg } as unknown as IntersectionObserverEntry], {} as IntersectionObserver));
+    expect(svg.hasAttribute("data-offscreen")).toBe(false);
+    expect(AVATAR_CSS).toContain(".aaa[data-offscreen] *{animation-play-state:paused!important}");
+  });
+
+  it("wanders with saccades from the centre, ponders, scans and orbits while waiting", () => {
+    expect(AVATAR_CSS).toMatch(/@keyframes aaa-saccade\{0%\{transform:translate\(0px,0px\) scaleX\(1\.000\)/);
+    expect(AVATAR_CSS).toContain(".aaa[data-gaze=follow]:not([data-pointer]) .aaa-gaze,.aaa[data-gaze=wander] .aaa-gaze{animation:aaa-saccade");
+    expect(AVATAR_CSS).toContain(".aaa[data-gaze=ponder] .aaa-gaze{animation:aaa-ponder");
+    const ponder = AVATAR_CSS.match(/@keyframes aaa-ponder\{.*\}\}/)![0];
+    const percents = [...ponder.matchAll(/(\d+(?:\.\d+)?)%\{/g)].map((match) => match[1]);
+    expect(new Set(percents).size).toBe(percents.length);
+    expect(ponder.split("cubic-bezier(.22,1,.36,1)").length - 1).toBeGreaterThanOrEqual(3);
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=waiting] .aaa-eye-l{animation:aaa-orbit-l 3.2s linear .32s infinite}");
+    const { container } = render(<Avatar activity="waiting" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+  });
+
+  it("adds no mouth for an expression when the mouth is off", () => {
+    const { container } = render(<Avatar expression="happy" name="a" />);
+    expect(container.querySelector(".aaa-mouth-rest")).toBeNull();
+    expect(container.querySelector(".aaa-mood")).toBeNull();
   });
 
   it("maps frame to the corner radius and clips the character to it", () => {
@@ -69,7 +295,7 @@ describe("Avatar", () => {
     const playing = ref.current!.play("done").then(() => {
       resolved = true;
     });
-    expect(animate).toHaveBeenCalledTimes(2);
+    expect(animate).toHaveBeenCalledTimes(6);
     await Promise.resolve();
     expect(resolved).toBe(false);
 
@@ -148,7 +374,7 @@ describe("Avatar", () => {
     expect(svg.dataset.motion).toBe("off");
   });
 
-  it("follows the pointer anywhere on the page only when look is on", () => {
+  it("follows the pointer anywhere on the page only while the gaze is follow", () => {
     stubMatchMedia(false);
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
@@ -160,10 +386,33 @@ describe("Avatar", () => {
     expect(Number.parseFloat(svg().style.getPropertyValue("--aaa-look-x"))).toBeGreaterThan(0);
     expect(Number.parseFloat(svg().style.getPropertyValue("--aaa-look-y"))).toBeGreaterThan(0);
 
-    rerender(<Avatar look={false} name="b" />);
-    svg().style.removeProperty("--aaa-look-x");
+    for (const props of [{ gaze: "ahead" }, { activity: "thinking" }] as const) {
+      rerender(<Avatar {...props} name="b" />);
+      svg().style.removeProperty("--aaa-look-x");
+      fireEvent.pointerMove(window, { clientX: 400, clientY: 300 });
+      expect(svg().style.getPropertyValue("--aaa-look-x")).toBe("");
+    }
+  });
+
+  it("hands the eyes back to their saccades 900ms after the pointer stops", () => {
+    vi.useFakeTimers();
+    stubMatchMedia(false);
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
+    const { container } = render(<Avatar name="a" />);
+    const svg = container.querySelector("svg")!;
     fireEvent.pointerMove(window, { clientX: 400, clientY: 300 });
-    expect(svg().style.getPropertyValue("--aaa-look-x")).toBe("");
+    expect(svg.hasAttribute("data-pointer")).toBe(true);
+    expect(Number.parseFloat(svg.style.getPropertyValue("--aaa-head-x"))).toBeGreaterThan(0);
+    vi.advanceTimersByTime(899);
+    expect(svg.hasAttribute("data-pointer")).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(svg.hasAttribute("data-pointer")).toBe(false);
+    expect(svg.style.getPropertyValue("--aaa-look-x")).toBe("");
+    expect(["0", "0.41", "0.7"]).toContain(svg.style.getPropertyValue("--aaa-gaze-phase"));
+    vi.useRealTimers();
   });
 
   it("ignores touch pointers and reduced motion when following", () => {

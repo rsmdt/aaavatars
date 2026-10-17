@@ -15,9 +15,15 @@ import {
 
 import {
   type AvatarEvent,
+  ERROR_ANIMATION,
   EVENT_ANIMATIONS,
+  type EventAnimation,
+  type LidFrame,
   MOOD_SWAP_REST,
   MOOD_SWAP_SHOW,
+  PREP_MS,
+  SLEEP_ANIMATION,
+  stage,
 } from "./animations.js";
 import { SHAPE_GEOMETRY } from "./geometry.js";
 import {
@@ -37,19 +43,53 @@ import {
   createSpec,
   shadeHex,
 } from "./spec.js";
-import { watchPointer } from "./pointer.js";
+import { restartGazeCentred, watchPointer } from "./pointer.js";
 import { AVATAR_CSS } from "./styles.js";
+import { watchVisibility } from "./visibility.js";
 
-export const AVATAR_STATUSES = [
+export const ACTIVITIES = [
   "idle",
   "thinking",
   "working",
+  "reading",
+  "coding",
   "waiting",
+  "asking",
+  "listening",
+  "speaking",
   "error",
   "sleeping",
 ] as const;
 
-export type AvatarStatus = (typeof AVATAR_STATUSES)[number];
+export const EXPRESSIONS = [
+  "neutral",
+  "happy",
+  "sad",
+  "angry",
+  "surprised",
+  "confused",
+  "love",
+] as const;
+
+export const GAZES = ["follow", "ponder", "scan", "read", "wander", "ahead"] as const;
+
+export type Activity = (typeof ACTIVITIES)[number];
+export type Expression = (typeof EXPRESSIONS)[number];
+export type Gaze = (typeof GAZES)[number];
+
+const ACTIVITY_GAZE: Record<Activity, Gaze> = {
+  idle: "follow",
+  thinking: "ponder",
+  working: "scan",
+  reading: "read",
+  coding: "ahead",
+  waiting: "ahead",
+  asking: "ahead",
+  listening: "follow",
+  speaking: "follow",
+  error: "ahead",
+  sleeping: "ahead",
+};
 
 export type AvatarContent = "face" | "initial";
 
@@ -59,6 +99,7 @@ export interface AvatarHandle {
 
 export interface AvatarProps {
   accessory?: Accessory;
+  activity?: Activity;
   background?: string;
   badge?: ReactNode;
   blink?: boolean;
@@ -66,12 +107,13 @@ export interface AvatarProps {
   className?: string;
   colors?: readonly string[];
   content?: AvatarContent;
+  expression?: Expression;
   eyes?: Eyes;
   fill?: Fill;
   frame?: false | number;
+  gaze?: Gaze;
   interactive?: boolean;
   label?: string;
-  look?: boolean;
   motion?: boolean;
   mouth?: Mouth;
   name: string;
@@ -80,7 +122,6 @@ export interface AvatarProps {
   shape?: Shape;
   size?: number;
   src?: string;
-  status?: AvatarStatus;
 }
 
 const DRAG_THRESHOLD = 3;
@@ -102,6 +143,50 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+function lidPairs(root: SVGSVGElement | null, lids: LidFrame[] | undefined): [Element, Keyframe[]][] {
+  if (!root || !lids) return [];
+  return [...root.querySelectorAll<SVGRectElement>(".aaa-lid")].map((lid) => {
+    const half = Number(lid.dataset.h);
+    const top = lid.classList.contains("aaa-lid-top");
+    const side = lid.classList.contains("aaa-lid-l") ? -1 : 1;
+    return [
+      lid,
+      lids.map(({ bottom, easing, offset, tilt = 0, top: drop }) => {
+        if (bottom === undefined && drop === undefined) return { offset, ...(easing && { easing }) };
+        const transform = top
+          ? `translateY(${((drop ?? 0) * half).toFixed(2)}px) rotate(${side * tilt}deg)`
+          : `translateY(${(-(bottom ?? 0) * half).toFixed(2)}px)`;
+        return { offset, transform, ...(easing && { easing }) };
+      }),
+    ];
+  });
+}
+
+function eyePairs(root: SVGSVGElement | null, animation: EventAnimation): [Element, Keyframe[]][] {
+  const frames = animation.eye;
+  if (!root || !frames) return [];
+  return [...root.querySelectorAll<SVGGElement>(".aaa-eye")].map((eye) => [
+    eye,
+    frames(eye.classList.contains("aaa-eye-l") ? -1 : 1, {
+      gap: Number(eye.dataset.gap),
+      h: Number(eye.dataset.h),
+      w: Number(eye.dataset.w),
+    }),
+  ]);
+}
+
+function heldValues(element: Element, frames: Keyframe[]): Keyframe {
+  const style = getComputedStyle(element);
+  const properties = new Set(
+    frames.flatMap((frame) =>
+      Object.keys(frame).filter((key) => !["offset", "easing", "composite", "transform"].includes(key)),
+    ),
+  );
+  return Object.fromEntries(
+    [...properties].map((property) => [property, style.getPropertyValue(property)]),
+  );
+}
+
 function clampFrame(frame: number): number {
   return Math.min(Math.max(frame, 0), 0.5);
 }
@@ -114,6 +199,7 @@ export function frameRadius(frame: false | number | undefined): string | undefin
 export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   {
     accessory,
+    activity = "idle",
     background,
     badge,
     blink = true,
@@ -121,12 +207,13 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     className,
     colors,
     content = "face",
+    expression = "neutral",
     eyes,
     fill = "solid",
     frame = 0.5,
+    gaze,
     interactive = false,
     label,
-    look = true,
     motion = true,
     mouth,
     name,
@@ -135,7 +222,6 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     shape,
     size = 64,
     src,
-    status = "idle",
   },
   ref,
 ) {
@@ -161,14 +247,15 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const showImage = Boolean(src) && !imageFailed;
   const hasMouth = content === "face" && (Boolean(renderMouth) || spec.mouth !== "none");
   const accessoryBehind = spec.accessory === "antenna" || spec.accessory === "sprout";
-  const tracksPointer = look && !showImage;
+  const resolvedGaze = gaze ?? ACTIVITY_GAZE[activity];
+  const tracksPointer = resolvedGaze === "follow" && !showImage;
   const slot = mouthSlot(geometry, spec.eyeColor);
   const bodyFill = fill === "gradient" ? `url(#${uid}-fill)` : spec.body;
   const placement = framed
     ? `translate(${50 + spec.offsetX} ${50 + spec.offsetY}) rotate(${spec.rotate}) scale(0.78) translate(-50 -50)`
     : "translate(50 50) scale(0.92) translate(-50 -50)";
 
-  const play = useCallback((event: AvatarEvent) => {
+  const run = useCallback((name: string, animation: EventAnimation, immediate = false) => {
     for (const animation of running.current) animation.cancel();
     const target = bodyRef.current;
     const eyePair = eyesRef.current;
@@ -180,8 +267,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     ) {
       return Promise.resolve();
     }
-    const animation = EVENT_ANIMATIONS[event];
-    const timing = { duration: animation.duration, easing: "ease-in-out" };
+    const prep = immediate ? 0 : (animation.prep ?? PREP_MS);
+    const timing = { duration: prep + animation.duration, easing: "linear" };
     const root = svgRef.current;
     const rest = root?.querySelector<SVGGElement>(".aaa-mouth-rest");
     const accessory = root?.querySelector<SVGGElement>(".aaa-accessory");
@@ -198,17 +285,49 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       [rest, animation.mood ? (animation.mood.rest ?? MOOD_SWAP_REST) : animation.mouth],
       [mood, animation.mood ? (animation.mood.frames ?? MOOD_SWAP_SHOW) : undefined],
       [accessory, accessoryFrames],
+      ...lidPairs(root, animation.lids),
+      ...eyePairs(root, animation),
     ];
-    running.current = pairs.flatMap(([element, frames]) =>
-      element && frames ? [element.animate(frames, timing)] : [],
+    const started = pairs.flatMap(([element, frames]) =>
+      element && frames?.length
+        ? [element.animate(stage(frames, animation.duration, prep, heldValues(element, frames)), timing)]
+        : [],
     );
-    return Promise.all(running.current.map((animation) => animation.finished)).then(
+    running.current = started;
+    root?.setAttribute("data-reacting", name);
+    return Promise.all(started.map((animation) => animation.finished)).then(
       () => undefined,
       () => undefined,
-    );
+    ).then(() => {
+      if (running.current !== started || !root) return;
+      restartGazeCentred(root);
+      root.removeAttribute("data-reacting");
+    });
   }, []);
 
-  useImperativeHandle(ref, () => ({ play }), [play]);
+  const play = useCallback(
+    (event: AvatarEvent, immediate = false) => run(event, EVENT_ANIMATIONS[event], immediate),
+    [run],
+  );
+
+  useImperativeHandle(ref, () => ({ play: (event: AvatarEvent) => play(event) }), [play]);
+
+  const previousActivity = useRef(activity);
+
+  useEffect(() => {
+    const previous = previousActivity.current;
+    previousActivity.current = activity;
+    if (previous === activity) return;
+    if (activity === "sleeping") void run("sleep", SLEEP_ANIMATION);
+    else if (previous === "sleeping") void play("wake");
+    else if (activity === "error") void run("error", ERROR_ANIMATION);
+  }, [activity, play, run]);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    return watchVisibility(svg);
+  }, []);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -227,7 +346,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     };
     state.holdTimer = setTimeout(() => {
       state.held = true;
-      void play("success");
+      void play("success", true);
     }, HOLD_MS);
     drag.current = state;
   }
@@ -268,7 +387,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       suppressClick.current = false;
       return;
     }
-    void play(event.detail > 1 ? "surprise" : "acknowledge");
+    void play(event.detail > 1 ? "surprise" : "acknowledge", true);
   }
 
   const svg = (
@@ -276,14 +395,22 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       ref={svgRef}
       aria-label={label ? `${name}, ${label}` : name}
       className={className && !badge ? `aaa ${className}` : "aaa"}
+      data-activity={activity}
       data-blink={blink ? undefined : "off"}
+      data-expression={expression}
+      data-gaze={resolvedGaze}
       data-interactive={interactive ? "" : undefined}
       data-motion={motion ? undefined : "off"}
-      data-status={status}
       height={size}
       overflow={framed ? undefined : "visible"}
       role="img"
-      style={{ "--aaa-phase": spec.phase, "--aaa-tempo": spec.tempo } as CSSProperties}
+      style={
+        {
+          "--aaa-gap": geometry.eyeGap,
+          "--aaa-phase": spec.phase,
+          "--aaa-tempo": spec.tempo,
+        } as CSSProperties
+      }
       viewBox="0 0 100 100"
       width={size}
       onClick={interactive ? handleClick : undefined}
@@ -332,81 +459,90 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
         ) : (
           <g transform={placement}>
             <g ref={squishRef} className="aaa-squish">
-              <g className="aaa-body-motion">
-                <g ref={bodyRef} className="aaa-react">
-                  {accessoryBehind ? (
-                    <AccessoryShape
-                      accent={spec.accent}
-                      accessory={spec.accessory}
-                      body={spec.body}
-                      geometry={geometry}
-                    />
-                  ) : null}
-                  <path
-                    d={geometry.path}
-                    fill={bodyFill}
-                    stroke={bodyFill}
-                    strokeLinejoin="round"
-                    strokeWidth={8}
-                  />
-                  {shading > 0 ? (
+              <g className="aaa-head">
+                <g className="aaa-body-motion">
+                  <g ref={bodyRef} className="aaa-react">
+                    {accessoryBehind ? (
+                      <AccessoryShape
+                        accent={spec.accent}
+                        accessory={spec.accessory}
+                        body={spec.body}
+                        geometry={geometry}
+                      />
+                    ) : null}
                     <path
                       d={geometry.path}
-                      fill={`url(#${uid}-shade)`}
-                      stroke={`url(#${uid}-shade)`}
+                      fill={bodyFill}
+                      stroke={bodyFill}
                       strokeLinejoin="round"
                       strokeWidth={8}
                     />
-                  ) : null}
-                  <g ref={eyesRef} className="aaa-eyes-react" fill={spec.eyeColor}>
-                    <g className="aaa-look">
-                      {content === "initial" ? (
-                        <text
-                          dominantBaseline="central"
-                          fontFamily="system-ui, sans-serif"
-                          fontSize={38}
-                          fontWeight={700}
-                          textAnchor="middle"
-                          x={50}
-                          y={(geometry.top + geometry.bottom) / 2 + 2}
-                        >
-                          {name.trim().charAt(0).toUpperCase()}
-                        </text>
-                      ) : (
-                        <g className="aaa-eyes-motion">
-                          <g
-                            className="aaa-blink"
-                            style={{
-                              animationDelay: `${spec.blinkDelay}s`,
-                              animationDuration: `${spec.blinkDuration}s`,
-                            }}
+                    {shading > 0 ? (
+                      <path
+                        d={geometry.path}
+                        fill={`url(#${uid}-shade)`}
+                        stroke={`url(#${uid}-shade)`}
+                        strokeLinejoin="round"
+                        strokeWidth={8}
+                      />
+                    ) : null}
+                    <g ref={eyesRef} className="aaa-eyes-react" fill={spec.eyeColor}>
+                      <g className="aaa-look">
+                        {content === "initial" ? (
+                          <text
+                            dominantBaseline="central"
+                            fontFamily="system-ui, sans-serif"
+                            fontSize={38}
+                            fontWeight={700}
+                            textAnchor="middle"
+                            x={50}
+                            y={(geometry.top + geometry.bottom) / 2 + 2}
                           >
-                            <EyePair eyes={spec.eyes} gap={geometry.eyeGap} y={geometry.eyeY} />
-                          </g>
-                        </g>
-                      )}
-                    </g>
-                  </g>
-                  {hasMouth ? (
-                    <g className="aaa-look">
-                      <g className="aaa-mouth-rest">
-                        {renderMouth ? (
-                          renderMouth(slot)
+                            {name.trim().charAt(0).toUpperCase()}
+                          </text>
                         ) : (
-                          <MouthShape mouth={spec.mouth} slot={slot} />
+                          <g className="aaa-gaze">
+                            <g className="aaa-eyes-motion">
+                              <g
+                                className="aaa-blink"
+                                style={{
+                                  animationDelay: `${spec.blinkDelay}s`,
+                                  animationDuration: `${spec.blinkDuration * 2}s`,
+                                }}
+                              >
+                                <EyePair
+                                  eyes={spec.eyes}
+                                  gap={geometry.eyeGap}
+                                  id={uid}
+                                  y={geometry.eyeY}
+                                />
+                              </g>
+                            </g>
+                          </g>
                         )}
                       </g>
-                      <MoodMouths slot={slot} />
                     </g>
-                  ) : null}
-                  {!accessoryBehind && (spec.accessory !== "glasses" || content === "face") ? (
-                    <AccessoryShape
-                      accent={spec.accent}
-                      accessory={spec.accessory}
-                      body={spec.body}
-                      geometry={geometry}
-                    />
-                  ) : null}
+                    {hasMouth ? (
+                      <g className="aaa-look">
+                        <g className="aaa-mouth-rest">
+                          {renderMouth ? (
+                            renderMouth(slot)
+                          ) : (
+                            <MouthShape mouth={spec.mouth} slot={slot} />
+                          )}
+                        </g>
+                        <MoodMouths slot={slot} />
+                      </g>
+                    ) : null}
+                    {!accessoryBehind && (spec.accessory !== "glasses" || content === "face") ? (
+                      <AccessoryShape
+                        accent={spec.accent}
+                        accessory={spec.accessory}
+                        body={spec.body}
+                        geometry={geometry}
+                      />
+                    ) : null}
+                  </g>
                 </g>
               </g>
             </g>

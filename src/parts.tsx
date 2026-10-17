@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import type { ShapeGeometry } from "./geometry.js";
 import type { Accessory, Eyes, Mouth } from "./spec.js";
@@ -18,17 +18,84 @@ export function mouthSlot(geometry: ShapeGeometry, color: string): MouthSlot {
   return { color, width: geometry.eyeGap * 1.2, x: 50, y: geometry.eyeY + 17 };
 }
 
-export function EyePair({ eyes, gap, y }: { eyes: Eyes; gap: number; y: number }) {
+const EYE_HALF_HEIGHT: Record<Eyes, number> = { dot: 7, round: 10, tall: 11, wide: 7 };
+
+const EYE_HALF_WIDTH: Record<Eyes, number> = { dot: 7, round: 8, tall: 5, wide: 11 };
+
+function EyeShape({ eyes }: { eyes: Eyes }) {
+  if (eyes === "dot") return <circle r={7} />;
+  if (eyes === "tall") return <rect x={-5} y={-11} width={10} height={22} rx={5} />;
+  if (eyes === "wide") return <ellipse rx={11} ry={7} />;
+  return <ellipse rx={8} ry={10} />;
+}
+
+function LidMask({ eyes, id, side }: { eyes: Eyes; id: string; side: "l" | "r" }) {
+  const half = EYE_HALF_HEIGHT[eyes];
+  return (
+    <mask id={id} maskUnits="userSpaceOnUse" x={-20} y={-20} width={40} height={40}>
+      <rect x={-20} y={-20} width={40} height={40} fill="#fff" />
+      <rect
+        className={`aaa-lid aaa-lid-top aaa-lid-${side}`}
+        data-h={half}
+        x={-20}
+        y={-half - 20}
+        width={40}
+        height={20}
+        fill="#000"
+      />
+      <rect
+        className={`aaa-lid aaa-lid-bottom aaa-lid-${side}`}
+        data-h={half}
+        x={-20}
+        y={half}
+        width={40}
+        height={20}
+        fill="#000"
+      />
+    </mask>
+  );
+}
+
+export function EyePair({
+  eyes,
+  gap,
+  id,
+  y,
+}: {
+  eyes: Eyes;
+  gap: number;
+  id: string;
+  y: number;
+}) {
+  const h = EYE_HALF_HEIGHT[eyes];
+  const w = EYE_HALF_WIDTH[eyes];
   return (
     <>
-      {[50 - gap, 50 + gap].map((x) => {
-        if (eyes === "dot") return <circle key={x} cx={x} cy={y} r={7} />;
-        if (eyes === "tall") {
-          return <rect key={x} x={x - 5} y={y - 11} width={10} height={22} rx={5} />;
-        }
-        if (eyes === "wide") return <ellipse key={x} cx={x} cy={y} rx={11} ry={7} />;
-        return <ellipse key={x} cx={x} cy={y} rx={8} ry={10} />;
-      })}
+      {(["l", "r"] as const).map((side) => (
+        <g key={side} transform={`translate(${side === "l" ? 50 - gap : 50 + gap} ${y})`}>
+          <g
+            className={`aaa-eye aaa-eye-${side}`}
+            data-gap={gap}
+            data-h={h}
+            data-w={w}
+            style={{ "--aaa-eye-h": h, "--aaa-eye-w": w } as CSSProperties}
+          >
+            <LidMask eyes={eyes} id={`${id}-lid-${side}`} side={side} />
+            <g mask={`url(#${id}-lid-${side})`}>
+              <EyeShape eyes={eyes} />
+            </g>
+          </g>
+          {side === "l" ? (
+            <path className="aaa-glyph aaa-chevron" d="M-8 -14H0L10 0L0 14H-8L2 0Z" />
+          ) : (
+            <rect className="aaa-glyph aaa-cursor" x={-9} y={8.5} width={18} height={5.5} />
+          )}
+          <path
+            className="aaa-glyph aaa-cross"
+            d="M-8.5 -5L-5 -8.5L0 -3.5L5 -8.5L8.5 -5L3.5 0L8.5 5L5 8.5L0 3.5L-5 8.5L-8.5 5L-3.5 0Z"
+          />
+        </g>
+      ))}
     </>
   );
 }

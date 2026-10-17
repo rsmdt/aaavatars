@@ -4,20 +4,24 @@ import { createRoot } from "react-dom/client";
 
 import {
   ACCESSORIES,
+  ACTIVITIES,
   AVATAR_EVENTS,
-  AVATAR_STATUSES,
   type Accessory,
+  type Activity,
   Avatar,
   type AvatarContent,
   type AvatarEvent,
   AvatarGroup,
   type AvatarHandle,
-  type AvatarStatus,
   DEFAULT_COLORS,
+  EXPRESSIONS,
+  type Expression,
   EYES,
   type Eyes,
   FILLS,
   type Fill,
+  GAZES,
+  type Gaze,
   MOUTHS,
   type Mouth,
   type MouthSlot,
@@ -149,7 +153,9 @@ function SpinnerMouth({ color, x, y }: MouthSlot) {
 function Demo() {
   const avatar = useRef<AvatarHandle>(null);
   const [name, setName] = useState(NAMES[0] as string);
-  const [status, setStatus] = useState<AvatarStatus>("idle");
+  const [activity, setActivity] = useState<Activity>("idle");
+  const [expression, setExpression] = useState<Expression | undefined>();
+  const [gaze, setGaze] = useState<Gaze | undefined>();
   const [playing, setPlaying] = useState<AvatarEvent | null>(null);
   const [tab, setTab] = useState<Tab>("options");
   const [palette, setPalette] = useState(0);
@@ -161,7 +167,6 @@ function Demo() {
   const [accessory, setAccessory] = useState<Accessory | undefined>();
   const [content, setContent] = useState<AvatarContent>("face");
   const [blink, setBlink] = useState(true);
-  const [look, setLook] = useState(true);
   const [motion, setMotion] = useState(true);
   const [interactive, setInteractive] = useState(true);
   const [badge, setBadge] = useState(false);
@@ -177,21 +182,22 @@ function Demo() {
   const value = formatAvatarValue({ shape, eyes, mouth, accessory, fill });
   const avatarProps = {
     accessory,
+    activity,
     blink,
     colors,
     content,
+    expression,
     eyes,
     fill,
     frame,
+    gaze,
     label: label || undefined,
-    look,
     motion,
     mouth,
     name,
     shading,
     shape,
     src: src || undefined,
-    status,
   };
 
   async function play(event: AvatarEvent) {
@@ -245,7 +251,7 @@ function Demo() {
         className="rounded-full border border-line bg-white px-2.5 py-1.5 text-[11px] text-[#858990]"
         aria-live="polite"
       >
-        {playing ? `play · ${capitalize(playing)}` : `${status} · ${capitalize(status)}`}
+        {playing ? `play · ${capitalize(playing)}` : `activity · ${capitalize(activity)}`}
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-1.5 text-[9.5px] text-[#858990]">
@@ -258,17 +264,27 @@ function Demo() {
 
       <div className={`${PANEL} flex-col`}>
         <div className="flex flex-wrap justify-center gap-1.5">
-          {AVATAR_STATUSES.map((option) => (
+          {ACTIVITIES.map((option) => (
             <button
               key={option}
-              aria-pressed={status === option}
+              aria-pressed={activity === option}
               className={`${BUTTON} ${SELECTED}`}
               type="button"
-              onClick={() => setStatus(option)}
+              onClick={() => setActivity(option)}
             >
               {capitalize(option)}
             </button>
           ))}
+        </div>
+        <div className="flex flex-wrap justify-center gap-1.5">
+          <Choice
+            emptyLabel="Neutral"
+            label="Expression"
+            options={EXPRESSIONS.filter((option) => option !== "neutral")}
+            value={expression}
+            onChange={setExpression}
+          />
+          <Choice label="Gaze" options={GAZES} value={gaze} onChange={setGaze} />
         </div>
         <div className="flex flex-wrap justify-center gap-1.5">
           {AVATAR_EVENTS.map((event) => (
@@ -395,9 +411,6 @@ function Demo() {
         <div className={`${PANEL} max-w-[760px]`}>
           <Switch checked={blink} onChange={setBlink}>
             Blink
-          </Switch>
-          <Switch checked={look} onChange={setLook}>
-            Pointer follow
           </Switch>
           <Switch checked={motion} onChange={setMotion}>
             Loop

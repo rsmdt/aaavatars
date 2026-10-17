@@ -1,11 +1,15 @@
 export { AVATAR_EVENTS, type AvatarEvent } from "./animations.js";
 export {
-  AVATAR_STATUSES,
+  ACTIVITIES,
+  type Activity,
   Avatar,
   type AvatarContent,
   type AvatarHandle,
   type AvatarProps,
-  type AvatarStatus,
+  EXPRESSIONS,
+  type Expression,
+  GAZES,
+  type Gaze,
 } from "./Avatar.js";
 export { AvatarGroup, type AvatarGroupProps } from "./AvatarGroup.js";
 export type { MouthSlot, RenderMouth } from "./parts.js";
