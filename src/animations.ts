@@ -3,11 +3,11 @@ export const AVATAR_EVENTS = [
   "handoff",
   "done",
   "success",
+  "warning",
   "failure",
-  "surprise",
-  "blocked",
+  "surprised",
+  "angry",
   "love",
-  "wake",
 ] as const;
 
 import type { Mood } from "./parts.js";
@@ -323,7 +323,7 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { offset: 1 },
     ],
   },
-  surprise: {
+  surprised: {
     mood: {
       name: "o",
       frames: [
@@ -359,7 +359,7 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { ...REST, easing: EASE_OUT },
     ],
   },
-  blocked: {
+  angry: {
     mood: { name: "sad" },
     accessory: {
       ...stalk(hold("rotate(-20deg)", 0.15, 0.65)),
@@ -383,6 +383,51 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { offset: 0, top: 0, bottom: 0 },
       { offset: 0.19, top: 0.83, bottom: 0, tilt: -16 },
       { offset: 0.662, top: 0.83, bottom: 0, tilt: -16, easing: EASE_OUT },
+      { offset: 1 },
+    ],
+  },
+  warning: {
+    duration: 3327,
+    body: [
+      { transform: "translateY(0)", offset: 0.301, easing: EASE_SINE },
+      { transform: "translateY(2.5px)", offset: 0.361 },
+      { transform: "translateY(2.5px)", offset: 0.451, easing: EASE_SINE },
+      { transform: "translateY(-2px)", offset: 0.511 },
+      { transform: "translateY(-2px)", offset: 0.661, easing: EASE_SINE },
+      { transform: "translateY(0)", offset: 0.691 },
+      REST,
+    ],
+    eyes: [],
+    eye: (side, { gap }) => {
+      const near = side === -1;
+      const lean = near
+        ? `translate(${((16 / 34) * gap).toFixed(2)}px,0px) rotate(-6.5deg) scale(1.37,1.4)`
+        : `translate(${((20.5 / 34) * gap).toFixed(2)}px,${((7.5 / 34) * gap).toFixed(2)}px) rotate(7.5deg) scale(.68,.99)`;
+      const sunk = near
+        ? lean
+        : `translate(${((20.5 / 34) * gap).toFixed(2)}px,${((9.9 / 34) * gap).toFixed(2)}px) rotate(7.5deg) scale(.68,.99)`;
+      return [
+        { transform: "none", offset: 0, easing: EASE_SINE },
+        { transform: lean, offset: 0.12 },
+        { transform: lean, offset: 0.301, easing: EASE_SINE },
+        { transform: sunk, offset: 0.361 },
+        { transform: sunk, offset: 0.451, easing: EASE_SINE },
+        { transform: lean, offset: 0.511 },
+        { transform: lean, offset: 0.932, easing: EASE_SINE },
+        REST,
+      ];
+    },
+    lids: [
+      { offset: 0, top: 0, bottom: 0, easing: EASE_SINE },
+      { offset: 0.12, top: 0.69, bottom: 0, tilt: -21, easing: EASE_SINE },
+      { offset: 0.156, top: 0.835, bottom: 0, tilt: -21 },
+      { offset: 0.301, top: 0.835, bottom: 0, tilt: -21, easing: EASE_SINE },
+      { offset: 0.361, top: 1.46, bottom: 0, tilt: -21 },
+      { offset: 0.451, top: 1.46, bottom: 0, tilt: -21, easing: EASE_SINE },
+      { offset: 0.511, top: 0.466, bottom: 0, tilt: -21 },
+      { offset: 0.661, top: 0.466, bottom: 0, tilt: -21, easing: EASE_SINE },
+      { offset: 0.691, top: 0.835, bottom: 0, tilt: -21 },
+      { offset: 0.932, top: 0.835, bottom: 0, tilt: -21, easing: EASE_SINE },
       { offset: 1 },
     ],
   },
@@ -415,51 +460,52 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { offset: 1 },
     ],
   },
-  wake: {
-    mood: {
-      name: "o",
-      frames: [
-        { opacity: 1, offset: 0.1 },
-        { opacity: 1, transform: "scale(1.2)", offset: 0.45 },
-        { opacity: 0, offset: 0.65 },
-      ],
-      rest: [
-        { opacity: 0, offset: 0.1 },
-        { opacity: 0, offset: 0.6 },
-      ],
-    },
-    accessory: {
-      ...stalk([
-        { transform: "rotate(-35deg)", offset: 0 },
-        { transform: "rotate(-35deg)", offset: 0.32 },
-        { transform: "rotate(8deg)", offset: 0.6 },
-      ]),
-      hat: hold("translateY(5px)", 0, 0.32),
-      glasses: hold("translateY(4px)", 0, 0.32),
-      bowtie: hold("rotate(15deg)", 0, 0.32),
-    },
-    prep: 0,
-    duration: 750,
-    body: [
-      { transform: "translateY(3px) scale(1)", offset: 0, easing: EASE_HEAD },
-      { transform: "translateY(-2px) scale(1.015)", offset: 0.367, easing: EASE_HEAD },
-      { transform: "translateY(0) scale(1)", offset: 0.667 },
-      REST,
+};
+
+export const WAKE_ANIMATION: EventAnimation = {
+  mood: {
+    name: "o",
+    frames: [
+      { opacity: 1, offset: 0.1 },
+      { opacity: 1, transform: "scale(1.2)", offset: 0.45 },
+      { opacity: 0, offset: 0.65 },
     ],
-    eyes: [
-      { transform: "scale(1)", offset: 0.32, easing: EASE_OUT },
-      { transform: "scale(1.26)", offset: 0.48 },
-      { transform: "scale(1.26)", offset: 0.6, easing: EASE_OUT },
-      REST,
-    ],
-    lids: [
-      { offset: 0, top: 0.85, bottom: 0.85 },
-      { offset: 0.32, top: 1, bottom: 0 },
-      { offset: 0.48, top: 0, bottom: 0 },
-      { offset: 0.6, top: 0, bottom: 0 },
-      { offset: 1 },
+    rest: [
+      { opacity: 0, offset: 0.1 },
+      { opacity: 0, offset: 0.6 },
     ],
   },
+  accessory: {
+    ...stalk([
+      { transform: "rotate(-35deg)", offset: 0 },
+      { transform: "rotate(-35deg)", offset: 0.32 },
+      { transform: "rotate(8deg)", offset: 0.6 },
+    ]),
+    hat: hold("translateY(5px)", 0, 0.32),
+    glasses: hold("translateY(4px)", 0, 0.32),
+    bowtie: hold("rotate(15deg)", 0, 0.32),
+  },
+  prep: 0,
+  duration: 750,
+  body: [
+    { transform: "translateY(3px) scale(1)", offset: 0, easing: EASE_HEAD },
+    { transform: "translateY(-2px) scale(1.015)", offset: 0.367, easing: EASE_HEAD },
+    { transform: "translateY(0) scale(1)", offset: 0.667 },
+    REST,
+  ],
+  eyes: [
+    { transform: "scale(1)", offset: 0.32, easing: EASE_OUT },
+    { transform: "scale(1.26)", offset: 0.48 },
+    { transform: "scale(1.26)", offset: 0.6, easing: EASE_OUT },
+    REST,
+  ],
+  lids: [
+    { offset: 0, top: 0.85, bottom: 0.85 },
+    { offset: 0.32, top: 1, bottom: 0 },
+    { offset: 0.48, top: 0, bottom: 0 },
+    { offset: 0.6, top: 0, bottom: 0 },
+    { offset: 1 },
+  ],
 };
 
 export const SLEEP_ANIMATION: EventAnimation = {

@@ -22,11 +22,124 @@ const EYE_HALF_HEIGHT: Record<Eyes, number> = { dot: 7, round: 10, tall: 11, wid
 
 const EYE_HALF_WIDTH: Record<Eyes, number> = { dot: 7, round: 8, tall: 5, wide: 11 };
 
-function EyeShape({ eyes }: { eyes: Eyes }) {
-  if (eyes === "dot") return <circle r={7} />;
-  if (eyes === "tall") return <rect x={-5} y={-11} width={10} height={22} rx={5} />;
-  if (eyes === "wide") return <ellipse rx={11} ry={7} />;
-  return <ellipse rx={8} ry={10} />;
+export type EyePose = "eye" | "prompt" | "cross" | "cursor";
+
+type Point = [x: number, y: number];
+
+type Segment = [control1: Point, control2: Point, end: Point];
+
+const SEGMENTS = 12;
+
+const CROSS: Point[] = [
+  [0, -3.5],
+  [5, -8.5],
+  [8.5, -5],
+  [3.5, 0],
+  [8.5, 5],
+  [5, 8.5],
+  [0, 3.5],
+  [-5, 8.5],
+  [-8.5, 5],
+  [-3.5, 0],
+  [-8.5, -5],
+  [-5, -8.5],
+];
+
+function arc(cx: number, cy: number, rx: number, ry: number, from: number, to: number): Segment {
+  const k = (4 / 3) * Math.tan((to - from) / 4);
+  const point = (angle: number): Point => [cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)];
+  const tangent = (angle: number): Point => [-rx * Math.sin(angle), ry * Math.cos(angle)];
+  const [x0, y0] = point(from);
+  const [x1, y1] = point(to);
+  const [tx0, ty0] = tangent(from);
+  const [tx1, ty1] = tangent(to);
+  return [
+    [x0 + k * tx0, y0 + k * ty0],
+    [x1 - k * tx1, y1 - k * ty1],
+    [x1, y1],
+  ];
+}
+
+function line([x0, y0]: Point, [x1, y1]: Point): Segment {
+  return [
+    [x0 + (x1 - x0) / 3, y0 + (y1 - y0) / 3],
+    [x0 + ((x1 - x0) * 2) / 3, y0 + ((y1 - y0) * 2) / 3],
+    [x1, y1],
+  ];
+}
+
+function toPath(start: Point, segments: Segment[]): string {
+  const at = ([x, y]: Point) => `${+x.toFixed(2)} ${+y.toFixed(2)}`;
+  return `M${at(start)}${segments.map((segment) => `C${segment.map(at).join(" ")}`).join("")}Z`;
+}
+
+const DEG = Math.PI / 180;
+
+function ellipse(rx: number, ry: number): string {
+  const step = (2 * Math.PI) / SEGMENTS;
+  return toPath(
+    [0, -ry],
+    Array.from({ length: SEGMENTS }, (_, index) => arc(0, 0, rx, ry, -90 * DEG + index * step, -90 * DEG + (index + 1) * step)),
+  );
+}
+
+function stadium(r: number, half: number): string {
+  const top = r - half;
+  const bottom = half - r;
+  return toPath(
+    [0, -half],
+    [
+      arc(0, top, r, r, 270 * DEG, 315 * DEG),
+      arc(0, top, r, r, 315 * DEG, 360 * DEG),
+      line([r, top], [r, 0]),
+      line([r, 0], [r, bottom]),
+      ...[0, 45, 90, 135].map((from) => arc(0, bottom, r, r, from * DEG, (from + 45) * DEG)),
+      line([-r, bottom], [-r, 0]),
+      line([-r, 0], [-r, top]),
+      arc(0, top, r, r, 180 * DEG, 225 * DEG),
+      arc(0, top, r, r, 225 * DEG, 270 * DEG),
+    ],
+  );
+}
+
+function polygon(vertices: Point[], dx = 0): string {
+  const shifted = vertices.map(([x, y]): Point => [x + dx, y]);
+  const edges = shifted.map((from, index) => ({ from, to: shifted[(index + 1) % shifted.length]!, parts: 1 }));
+  for (let count = edges.length; count < SEGMENTS; count += 1) {
+    const longest = edges.reduce((best, edge) =>
+      Math.hypot(edge.to[0] - edge.from[0], edge.to[1] - edge.from[1]) / edge.parts >
+      Math.hypot(best.to[0] - best.from[0], best.to[1] - best.from[1]) / best.parts
+        ? edge
+        : best,
+    );
+    longest.parts += 1;
+  }
+  const anchors = edges.flatMap(({ from, to, parts }) =>
+    Array.from({ length: parts }, (_, index): Point => [
+      from[0] + ((to[0] - from[0]) * index) / parts,
+      from[1] + ((to[1] - from[1]) * index) / parts,
+    ]),
+  );
+  const cx = shifted.reduce((sum, [x]) => sum + x, 0) / shifted.length;
+  const cy = shifted.reduce((sum, [, y]) => sum + y, 0) / shifted.length;
+  const offTop = ([x, y]: Point) => Math.abs(Math.atan2(x - cx, cy - y));
+  const first = anchors.reduce((best, anchor, index) => (offTop(anchor) < offTop(anchors[best]!) ? index : best), 0);
+  const ordered = [...anchors.slice(first), ...anchors.slice(0, first)];
+  return toPath(
+    ordered[0]!,
+    ordered.map((anchor, index) => line(anchor, ordered[(index + 1) % ordered.length]!)),
+  );
+}
+
+export function eyePath(eyes: Eyes, pose: EyePose, side: -1 | 1, gap: number): string {
+  if (pose === "cross") return polygon(CROSS);
+  if (pose === "cursor") return polygon([[-2, -13.5], [2, -13.5], [2, 13.5], [-2, 13.5]], -side * gap);
+  if (pose === "prompt" && side === -1) {
+    return polygon([[-8, -14], [0, -14], [10, 0], [0, 14], [-8, 14], [2, 0]], gap - 11.5);
+  }
+  if (pose === "prompt") return polygon([[-9, 8.5], [9, 8.5], [9, 14], [-9, 14]], 10.5 - gap);
+  if (eyes === "tall") return stadium(5, 11);
+  return ellipse(EYE_HALF_WIDTH[eyes], EYE_HALF_HEIGHT[eyes]);
 }
 
 function LidMask({ eyes, id, side }: { eyes: Eyes; id: string; side: "l" | "r" }) {
@@ -60,11 +173,13 @@ export function EyePair({
   eyes,
   gap,
   id,
+  pose,
   y,
 }: {
   eyes: Eyes;
   gap: number;
   id: string;
+  pose: EyePose;
   y: number;
 }) {
   const h = EYE_HALF_HEIGHT[eyes];
@@ -77,23 +192,15 @@ export function EyePair({
             className={`aaa-eye aaa-eye-${side}`}
             data-gap={gap}
             data-h={h}
+            data-shape={pose}
             data-w={w}
             style={{ "--aaa-eye-h": h, "--aaa-eye-w": w } as CSSProperties}
           >
             <LidMask eyes={eyes} id={`${id}-lid-${side}`} side={side} />
             <g mask={`url(#${id}-lid-${side})`}>
-              <EyeShape eyes={eyes} />
+              <path className="aaa-shape" d={eyePath(eyes, pose, side === "l" ? -1 : 1, gap)} />
             </g>
           </g>
-          {side === "l" ? (
-            <path className="aaa-glyph aaa-chevron" d="M-8 -14H0L10 0L0 14H-8L2 0Z" />
-          ) : (
-            <rect className="aaa-glyph aaa-cursor" x={-9} y={8.5} width={18} height={5.5} />
-          )}
-          <path
-            className="aaa-glyph aaa-cross"
-            d="M-8.5 -5L-5 -8.5L0 -3.5L5 -8.5L8.5 -5L3.5 0L8.5 5L5 8.5L0 3.5L-5 8.5L-8.5 5L-3.5 0Z"
-          />
         </g>
       ))}
     </>

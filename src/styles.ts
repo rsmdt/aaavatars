@@ -1,5 +1,6 @@
 const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
 const EASE_SPRING = "cubic-bezier(.34,1.56,.64,1)";
+const EASE_SMOOTH = "cubic-bezier(.37,0,.63,1)";
 
 type Glance = [percent: number, x: number, y: number];
 
@@ -42,6 +43,11 @@ const lid = (amount: string) => `translateY(calc(var(--aaa-eye-h)*${amount}px))`
 const HEART = (side: -1 | 1) =>
   `translateX(calc((var(--aaa-gap) + 3.6)*${-side}px)) rotate(${side * 42}deg) scale(calc(7.5/var(--aaa-eye-w)),calc(11.5/var(--aaa-eye-h)))`;
 
+const timeline = (name: string, total: number, stops: [ms: number, transform: string][]) =>
+  `@keyframes ${name}{${stops.map(([ms, transform]) => `${+((ms / total) * 100).toFixed(3)}%{transform:${transform};animation-timing-function:${EASE_SMOOTH}}`).join("")}}`;
+
+const peek = (amount: string) => `translateY(calc(var(--aaa-eye-h)*${amount}px))`;
+
 const loop = (seconds: number, easing = "ease-in-out") =>
   `calc(${seconds}s*var(--aaa-tempo,1)) ${easing} calc(-${seconds}s*var(--aaa-phase,0)) infinite`;
 
@@ -66,31 +72,35 @@ export const AVATAR_CSS = `
 .aaa-lid{transform-box:fill-box;transition:transform .32s cubic-bezier(.16,1,.3,1)}
 .aaa-lid-top{transform-origin:50% 100%}
 .aaa-lid-bottom{transform-origin:50% 0}
-.aaa-glyph{transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .32s cubic-bezier(.16,1,.3,1)}
+.aaa-shape{transition:d .32s cubic-bezier(.16,1,.3,1)}
+.aaa-eye:not([data-shape=eye]) .aaa-lid-top{transform:translateY(-12px)}
+.aaa-eye:not([data-shape=eye]) .aaa-lid-bottom{transform:translateY(12px)}
 .aaa[data-activity=idle] .aaa-body-motion{animation:aaa-drift ${loop(11)}}
 .aaa[data-activity=thinking] .aaa-body-motion{animation:aaa-sway ${loop(3)}}
 .aaa[data-activity=coding] .aaa-body-motion{animation:aaa-bob ${loop(1.6)}}
 .aaa[data-activity=coding][data-expression=neutral] .aaa-blink{animation:none}
-.aaa:is([data-activity=coding],[data-activity=error])[data-expression=neutral] .aaa-eye{transform:scale(0)}
-.aaa[data-activity=coding][data-expression=neutral] :is(.aaa-chevron,.aaa-cursor){transition-delay:.1s}
-.aaa[data-activity=coding][data-expression=neutral] .aaa-chevron{transform:translateX(calc((var(--aaa-gap) - 11.5)*1px))}
-.aaa[data-activity=coding][data-expression=neutral] .aaa-cursor{transform:translateX(calc((10.5 - var(--aaa-gap))*1px));animation:aaa-caret 1.06s steps(1) .42s infinite}
+.aaa[data-activity=coding][data-expression=neutral] .aaa-eye-r{animation:aaa-caret 1.06s steps(1) .32s infinite}
 .aaa[data-activity=working] .aaa-body-motion{animation:aaa-bob ${loop(0.9)}}
 .aaa[data-activity=waiting] .aaa-eye-l{animation:aaa-orbit-l 3.2s linear .32s infinite}
 .aaa[data-activity=waiting] .aaa-eye-r{animation:aaa-orbit-r 3.2s linear .32s infinite}
-.aaa[data-activity=waiting] .aaa-blink{animation:none}
+.aaa[data-activity=waiting][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=asking] .aaa-body-motion{transform:rotate(-7deg)}
 .aaa[data-activity=asking][data-expression=neutral] .aaa-eye-r{transform:scale(1.25)}
 .aaa[data-activity=error] .aaa-body-motion{transform:rotate(-10deg)}
-.aaa[data-activity=error][data-expression=neutral] .aaa-cross{transform:none;transition-delay:.1s}
-.aaa[data-activity=error] .aaa-blink{animation:none}
+.aaa[data-activity=error][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=sleeping] .aaa-body-motion{animation:aaa-breathe ${loop(4.2)}}
 .aaa[data-activity=sleeping] .aaa-lid-top{transform:${lid(".85")}}
 .aaa[data-activity=sleeping] .aaa-lid-bottom{transform:${lid("-.85")}}
 .aaa[data-activity=sleeping] .aaa-react{transform:translateY(3px)}
-.aaa[data-activity=sleeping] .aaa-blink{animation:none}
+.aaa[data-activity=sleeping][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=listening] .aaa-body-motion{animation:aaa-nod ${loop(2.8)}}
-.aaa[data-activity=listening] .aaa-eyes-motion{transform:scale(1.08)}
+.aaa[data-activity=listening][data-expression=neutral] .aaa-eye{animation:aaa-caret 1.06s steps(1) .32s infinite}
+.aaa[data-activity=listening][data-expression=neutral] .aaa-blink{animation:none}
+.aaa[data-activity=reviewing] .aaa-lid-top{transform:${lid(".78")}}
+.aaa[data-activity=reviewing] .aaa-lid-bottom{transform:${lid("-.78")}}
+.aaa[data-activity=reviewing][data-expression=neutral] .aaa-blink{animation:none}
+.aaa[data-activity=reviewing] .aaa-eye{animation:aaa-inspect ${loop(6.08, "linear")}}
+.aaa[data-activity=reviewing] .aaa-body-motion{animation:aaa-inspect-head ${loop(6.08, "linear")}}
 .aaa[data-activity=speaking] .aaa-body-motion{animation:aaa-bob ${loop(1.4)}}
 .aaa[data-activity=speaking] .aaa-mouth-rest{animation:aaa-talk .32s ease-in-out infinite}
 .aaa[data-gaze=follow]:not([data-pointer]) .aaa-gaze,.aaa[data-gaze=wander] .aaa-gaze{animation:aaa-saccade ${gazeLoop(16)}}
@@ -121,7 +131,6 @@ export const AVATAR_CSS = `
 .aaa:is([data-expression=sad],[data-expression=angry]) .aaa-mood-sad{opacity:1}
 .aaa[data-expression=surprised] .aaa-mood-o{opacity:1}
 .aaa[data-expression=confused] .aaa-mood-small{opacity:1}
-.aaa:not([data-expression=neutral]) .aaa-eyes-motion{transform:none}
 .aaa:not([data-expression=neutral]) .aaa-lid{transform:none}
 .aaa:not([data-expression=neutral]) .aaa-eye{animation:none}
 .aaa[data-expression=happy] .aaa-lid-bottom{transform:${lid("-1")}}
@@ -189,6 +198,30 @@ ${glances(
   ],
   2,
 )}
+${timeline("aaa-inspect", 6080, [
+  [0, peek("0")],
+  [880, peek("0")],
+  [1280, peek(".55")],
+  [1840, peek(".55")],
+  [2000, peek("-.55")],
+  [2580, peek("-.55")],
+  [2720, peek("0")],
+  [3480, peek("0")],
+  [3620, peek(".55")],
+  [4240, peek(".55")],
+  [4420, peek("0")],
+  [6080, peek("0")],
+])}
+${timeline("aaa-inspect-head", 6080, [
+  [0, "translateY(0)"],
+  [880, "translateY(0)"],
+  [1280, "translateY(2.5px)"],
+  [1840, "translateY(2.5px)"],
+  [2000, "translateY(-2px)"],
+  [2580, "translateY(-2px)"],
+  [2720, "translateY(0)"],
+  [6080, "translateY(0)"],
+])}
 @keyframes aaa-scan{0%{transform:${gazeTransform(-4, 1)};animation-timing-function:cubic-bezier(.45,.05,.55,.95)}70%{transform:${gazeTransform(4, 1)};animation-timing-function:${EASE_OUT}}80%,100%{transform:${gazeTransform(-4, 1)}}}
 ${orbit("aaa-orbit-l", -1)}
 ${orbit("aaa-orbit-r", 1)}

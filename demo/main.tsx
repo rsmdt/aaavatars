@@ -70,6 +70,17 @@ const FIELD = "border-0 bg-transparent text-ink outline-none";
 
 const HINT = "rounded-full border border-line bg-white/80 px-[7px] py-1";
 
+function Layer({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <div className="flex w-full items-start gap-3">
+      <span className="w-[72px] shrink-0 pt-2 text-right text-[10px] font-semibold tracking-wider text-subtle uppercase">
+        {label}
+      </span>
+      <div className="flex flex-1 flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -251,7 +262,13 @@ function Demo() {
         className="rounded-full border border-line bg-white px-2.5 py-1.5 text-[11px] text-[#858990]"
         aria-live="polite"
       >
-        {playing ? `play · ${capitalize(playing)}` : `activity · ${capitalize(activity)}`}
+        {playing
+          ? `event ${capitalize(playing)}`
+          : [
+              `activity ${capitalize(activity)}`,
+              `expression ${capitalize(expression ?? "neutral")}`,
+              `gaze ${capitalize(gaze ?? "auto")}`,
+            ].join(" · ")}
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-1.5 text-[9.5px] text-[#858990]">
@@ -262,8 +279,8 @@ function Demo() {
         <span className={HINT}>Press and hold it</span>
       </div>
 
-      <div className={`${PANEL} flex-col`}>
-        <div className="flex flex-wrap justify-center gap-1.5">
+      <div className={`${PANEL} flex-col items-stretch`}>
+        <Layer label="Activity">
           {ACTIVITIES.map((option) => (
             <button
               key={option}
@@ -275,23 +292,41 @@ function Demo() {
               {capitalize(option)}
             </button>
           ))}
-        </div>
-        <div className="flex flex-wrap justify-center gap-1.5">
-          <Choice
-            emptyLabel="Neutral"
-            label="Expression"
-            options={EXPRESSIONS.filter((option) => option !== "neutral")}
-            value={expression}
-            onChange={setExpression}
-          />
-          <Choice label="Gaze" options={GAZES} value={gaze} onChange={setGaze} />
-        </div>
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {AVATAR_EVENTS.map((event) => (
-            <button key={event} className={BUTTON} type="button" onClick={() => void play(event)}>
-              play({event})
+        </Layer>
+        <Layer label="Expression">
+          {EXPRESSIONS.map((option) => (
+            <button
+              key={option}
+              aria-pressed={(expression ?? "neutral") === option}
+              className={`${BUTTON} ${SELECTED}`}
+              type="button"
+              onClick={() => setExpression(option === "neutral" ? undefined : option)}
+            >
+              {capitalize(option)}
             </button>
           ))}
+        </Layer>
+        <Layer label="Gaze">
+          {[undefined, ...GAZES].map((option) => (
+            <button
+              key={option ?? "auto"}
+              aria-pressed={gaze === option}
+              className={`${BUTTON} ${SELECTED}`}
+              type="button"
+              onClick={() => setGaze(option)}
+            >
+              {capitalize(option ?? "auto")}
+            </button>
+          ))}
+        </Layer>
+        <Layer label="Event">
+          {AVATAR_EVENTS.map((event) => (
+            <button key={event} className={BUTTON} type="button" onClick={() => void play(event)}>
+              {capitalize(event)}
+            </button>
+          ))}
+        </Layer>
+        <div className="flex justify-center">
           <button className={BUTTON} type="button" onClick={randomize}>
             Random
           </button>

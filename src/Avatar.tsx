@@ -23,12 +23,14 @@ import {
   MOOD_SWAP_SHOW,
   PREP_MS,
   SLEEP_ANIMATION,
+  WAKE_ANIMATION,
   stage,
 } from "./animations.js";
 import { SHAPE_GEOMETRY } from "./geometry.js";
 import {
   AccessoryShape,
   EyePair,
+  type EyePose,
   MoodMouths,
   MouthShape,
   type RenderMouth,
@@ -52,6 +54,7 @@ export const ACTIVITIES = [
   "thinking",
   "working",
   "reading",
+  "reviewing",
   "coding",
   "waiting",
   "asking",
@@ -82,13 +85,20 @@ const ACTIVITY_GAZE: Record<Activity, Gaze> = {
   thinking: "ponder",
   working: "scan",
   reading: "read",
+  reviewing: "ahead",
   coding: "ahead",
   waiting: "ahead",
   asking: "ahead",
-  listening: "follow",
+  listening: "ahead",
   speaking: "follow",
   error: "ahead",
   sleeping: "ahead",
+};
+
+const ACTIVITY_POSE: Partial<Record<Activity, EyePose>> = {
+  coding: "prompt",
+  error: "cross",
+  listening: "cursor",
 };
 
 export type AvatarContent = "face" | "initial";
@@ -234,6 +244,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const drag = useRef<DragState | null>(null);
   const suppressClick = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [reacting, setReacting] = useState(false);
 
   useEffect(() => setImageFailed(false), [src]);
 
@@ -248,6 +259,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const hasMouth = content === "face" && (Boolean(renderMouth) || spec.mouth !== "none");
   const accessoryBehind = spec.accessory === "antenna" || spec.accessory === "sprout";
   const resolvedGaze = gaze ?? ACTIVITY_GAZE[activity];
+  const shownExpression = activity === "sleeping" ? "neutral" : expression;
+  const pose = shownExpression === "neutral" && !reacting ? (ACTIVITY_POSE[activity] ?? "eye") : "eye";
   const tracksPointer = resolvedGaze === "follow" && !showImage;
   const slot = mouthSlot(geometry, spec.eyeColor);
   const bodyFill = fill === "gradient" ? `url(#${uid}-fill)` : spec.body;
@@ -295,6 +308,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     );
     running.current = started;
     root?.setAttribute("data-reacting", name);
+    setReacting(true);
     return Promise.all(started.map((animation) => animation.finished)).then(
       () => undefined,
       () => undefined,
@@ -302,6 +316,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       if (running.current !== started || !root) return;
       restartGazeCentred(root);
       root.removeAttribute("data-reacting");
+      setReacting(false);
     });
   }, []);
 
@@ -319,7 +334,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     previousActivity.current = activity;
     if (previous === activity) return;
     if (activity === "sleeping") void run("sleep", SLEEP_ANIMATION);
-    else if (previous === "sleeping") void play("wake");
+    else if (previous === "sleeping") void run("wake", WAKE_ANIMATION);
     else if (activity === "error") void run("error", ERROR_ANIMATION);
   }, [activity, play, run]);
 
@@ -387,7 +402,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       suppressClick.current = false;
       return;
     }
-    void play(event.detail > 1 ? "surprise" : "acknowledge", true);
+    void play(event.detail > 1 ? "surprised" : "acknowledge", true);
   }
 
   const svg = (
@@ -397,7 +412,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       className={className && !badge ? `aaa ${className}` : "aaa"}
       data-activity={activity}
       data-blink={blink ? undefined : "off"}
-      data-expression={expression}
+      data-expression={shownExpression}
       data-gaze={resolvedGaze}
       data-interactive={interactive ? "" : undefined}
       data-motion={motion ? undefined : "off"}
@@ -514,6 +529,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
                                   eyes={spec.eyes}
                                   gap={geometry.eyeGap}
                                   id={uid}
+                                  pose={pose}
                                   y={geometry.eyeY}
                                 />
                               </g>

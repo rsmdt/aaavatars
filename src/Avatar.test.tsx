@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AVATAR_EVENTS } from "./animations.js";
 import { Avatar, type AvatarHandle } from "./Avatar.js";
 import { AVATAR_CSS } from "./styles.js";
 
@@ -50,6 +51,10 @@ describe("Avatar", () => {
     expect(AVATAR_CSS).not.toMatch(/aaa-eyes-motion\{[^}]*animation/);
   });
 
+  it("lets a non-neutral expression own the blink over the activity", () => {
+    expect(AVATAR_CSS).not.toMatch(/data-activity=\w+\] \.aaa-blink/);
+  });
+
   it("lets a non-neutral expression own the mouth over the activity", () => {
     expect(AVATAR_CSS).not.toMatch(/data-activity=\w+\] \.aaa-mood-/);
     expect(AVATAR_CSS).toMatch(/\.aaa:not\(\[data-expression=neutral\]\) \.aaa-mouth-rest\{opacity:0\}/);
@@ -60,7 +65,7 @@ describe("Avatar", () => {
     expect(container.querySelectorAll(".aaa-eye")).toHaveLength(2);
     expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-l{transform:translateX(");
     expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-r{transform:translateX(");
-    expect(AVATAR_CSS).toContain(".aaa[data-activity=error][data-expression=neutral] .aaa-cross{transform:none");
+    expect([...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"))).toEqual(["eye", "eye"]);
   });
 
   it("gives each eye a top and bottom lid scaled to its height", () => {
@@ -91,21 +96,50 @@ describe("Avatar", () => {
     );
   });
 
-  it("morphs the eyes into a >_ prompt with a blinking cursor while coding", () => {
+  it("morphs the real eyes into a >_ prompt with a blinking cursor while coding", () => {
     const { container } = render(<Avatar activity="coding" name="a" />);
-    expect(container.querySelectorAll(".aaa-eye")).toHaveLength(2);
-    expect(container.querySelector(".aaa-eye-l + path.aaa-chevron")).not.toBeNull();
-    expect(container.querySelector(".aaa-eye-r + rect.aaa-cursor")).not.toBeNull();
+    const shapes = [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+    expect(shapes).toEqual(["prompt", "prompt"]);
+    expect(container.querySelectorAll(".aaa-shape")).toHaveLength(2);
     expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
-    expect(AVATAR_CSS).toContain(
-      ".aaa:is([data-activity=coding],[data-activity=error])[data-expression=neutral] .aaa-eye{transform:scale(0)}",
-    );
-    expect(AVATAR_CSS).toContain(
-      ".aaa[data-activity=coding][data-expression=neutral] .aaa-chevron{transform:translateX(calc((var(--aaa-gap) - 11.5)*1px))}",
-    );
-    expect(AVATAR_CSS).toContain(
-      ".aaa[data-activity=coding][data-expression=neutral] .aaa-cursor{transform:translateX(calc((10.5 - var(--aaa-gap))*1px));animation:aaa-caret",
-    );
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=coding][data-expression=neutral] .aaa-eye-r{animation:aaa-caret");
+    expect(AVATAR_CSS).toContain(".aaa-eye:not([data-shape=eye]) .aaa-lid-top{transform:translateY(-12px)}");
+  });
+
+  it("draws every eye pose with the same path commands so it can morph", () => {
+    const { container, rerender } = render(<Avatar name="a" />);
+    for (const eyes of ["dot", "round", "tall", "wide"] as const) {
+      for (const activity of ["idle", "coding", "error", "listening"] as const) {
+        rerender(<Avatar activity={activity} eyes={eyes} name="a" />);
+        for (const shape of container.querySelectorAll(".aaa-shape")) {
+          expect(shape.getAttribute("d")).toMatch(/^M[^A-Z]*(C[^A-Z]*){12}Z$/);
+        }
+      }
+    }
+    expect(AVATAR_CSS).toContain(".aaa-shape{transition:d .32s");
+  });
+
+  it("morphs back to round eyes while a reaction plays, then returns to the activity pose", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} activity="coding" name="a" />);
+    const shape = () => container.querySelector(".aaa-eye-l")!.getAttribute("data-shape");
+    let playing!: Promise<void>;
+    act(() => {
+      playing = ref.current!.play("love");
+    });
+    expect(shape()).toBe("eye");
+    await act(async () => {
+      finishAll();
+      await playing;
+    });
+    expect(shape()).toBe("prompt");
+  });
+
+  it("keeps the eyes closed while sleeping, whatever the expression", () => {
+    const { container } = render(<Avatar activity="sleeping" expression="happy" name="a" />);
+    expect(container.querySelector("svg")!.dataset.expression).toBe("neutral");
   });
 
   it("falls asleep and wakes up with the lid sequences, but not on mount", () => {
@@ -140,7 +174,8 @@ describe("Avatar", () => {
 
   it("turns both eyes into crosses during an error", () => {
     const { container } = render(<Avatar activity="error" name="a" />);
-    expect(container.querySelectorAll(".aaa-eye + .aaa-glyph ~ .aaa-cross")).toHaveLength(2);
+    const shapes = [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+    expect(shapes).toEqual(["cross", "cross"]);
     expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
   });
 
@@ -157,6 +192,41 @@ describe("Avatar", () => {
     const read = AVATAR_CSS.match(/@keyframes aaa-read\{(.*?)\}\}/)![1]!;
     for (const line of ["-2px", "0.5px", "3px"]) expect(read).toContain(`translate(-5px,${line})`);
     expect(AVATAR_CSS).toContain(".aaa[data-gaze=read] .aaa-gaze{animation:aaa-read");
+  });
+
+  it("merges the eyes into one blinking cursor while listening", () => {
+    const { container } = render(<Avatar activity="listening" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+    const shapes = [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+    expect(shapes).toEqual(["cursor", "cursor"]);
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=listening][data-expression=neutral] .aaa-eye{animation:aaa-caret");
+  });
+
+  it("narrows the eyes to a slit and inspects up and down while reviewing", () => {
+    const { container } = render(<Avatar activity="reviewing" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=reviewing] .aaa-lid-top{transform:translateY(calc(var(--aaa-eye-h)*.78px))}");
+    const inspect = AVATAR_CSS.match(/@keyframes aaa-inspect\{(.*?)\}\}/)![1]!;
+    expect(inspect).toContain("translateY(calc(var(--aaa-eye-h)*.55px))");
+    expect(inspect).toContain("translateY(calc(var(--aaa-eye-h)*-.55px))");
+  });
+
+  it("winces asymmetrically for a warning", async () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    render(<Avatar ref={ref} name="a" />);
+    void ref.current!.play("warning");
+    const eyeFrames = (animate.mock.calls as unknown as [Keyframe[]][])
+      .filter((_, index) => (animate.mock.contexts[index] as Element).classList.contains("aaa-eye"))
+      .map(([frames]) => frames.map((frame) => frame.transform).join(" "));
+    expect(eyeFrames).toHaveLength(2);
+    expect(eyeFrames[0]).toContain("scale(1.37,1.4)");
+    expect(eyeFrames[1]).toContain("scale(.68,.99)");
+  });
+
+  it("wakes only by leaving sleeping, not through play()", () => {
+    expect(AVATAR_EVENTS).not.toContain("wake");
   });
 
   it("sweeps the eyes once when an error starts, but not on mount", () => {
@@ -200,8 +270,8 @@ describe("Avatar", () => {
     const { finishAll } = stubAnimate();
     const ref = createRef<AvatarHandle>();
     const { container } = render(<Avatar ref={ref} name="a" />);
-    const playing = ref.current!.play("blocked");
-    expect(container.querySelector("svg")!.dataset.reacting).toBe("blocked");
+    const playing = ref.current!.play("angry");
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("angry");
     expect(AVATAR_CSS).toContain(".aaa[data-reacting] .aaa-gaze,.aaa[data-reacting] .aaa-blink,.aaa[data-reacting] .aaa-eye{animation:none}");
     await act(async () => {
       finishAll();
