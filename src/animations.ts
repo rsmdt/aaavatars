@@ -4,7 +4,7 @@ export const AVATAR_EVENTS = [
   "done",
   "success",
   "warning",
-  "failure",
+  "error",
   "surprised",
   "angry",
   "love",
@@ -295,7 +295,7 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { offset: 1 },
     ],
   },
-  failure: {
+  error: {
     mood: { name: "sad" },
     accessory: {
       ...stalk(hold("rotate(30deg)", 0.2, 0.85)),

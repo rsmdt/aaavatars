@@ -14,6 +14,13 @@
   --color-dot: #d7d9dc;
   --color-track: #d4d6d9;
   --color-knob: #5f646c;
+  --animate-marquee: marquee 60s linear infinite;
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 @layer base {

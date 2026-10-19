@@ -576,13 +576,52 @@ describe("Avatar", () => {
     expect(container.querySelector(".aaa-antenna-tip")).not.toBeNull();
   });
 
+  it("reports the playing event through onChange, then null when it ends", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const onChange = vi.fn();
+    const ref = createRef<AvatarHandle>();
+    render(<Avatar ref={ref} name="a" onChange={onChange} />);
+
+    let played!: Promise<void>;
+    act(() => {
+      played = ref.current!.play("success");
+    });
+    expect(onChange).toHaveBeenLastCalledWith("success");
+    await act(async () => {
+      finishAll();
+      await played;
+    });
+    expect(onChange.mock.calls).toEqual([["success"], [null]]);
+  });
+
+  it("does not report null for an event replaced by a newer one", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const onChange = vi.fn();
+    const ref = createRef<AvatarHandle>();
+    render(<Avatar ref={ref} name="a" onChange={onChange} />);
+
+    let first!: Promise<void>;
+    let second!: Promise<void>;
+    act(() => {
+      first = ref.current!.play("done");
+      second = ref.current!.play("error");
+    });
+    await act(async () => {
+      finishAll();
+      await Promise.all([first, second]);
+    });
+    expect(onChange.mock.calls).toEqual([["done"], ["error"], [null]]);
+  });
+
   it("play moves the mouth and the accessory with the mood", () => {
     stubMatchMedia(false);
     const { animate } = stubAnimate();
     const ref = createRef<AvatarHandle>();
     render(<Avatar ref={ref} accessory="hat" mouth="smile" name="a" />);
 
-    void ref.current!.play("failure");
+    void ref.current!.play("error");
     const animated = animate.mock.contexts.map((element) =>
       (element as Element).getAttribute("class"),
     );

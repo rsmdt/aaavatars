@@ -41,6 +41,7 @@ await avatar.current?.play("done");
 | `label` | tooltip and accessible description of the current action |
 | `blink` / `motion` | turn blinking or looping off |
 | `interactive` | click, double-click, drag-to-squish and press-and-hold reactions |
+| `onChange` | called with the event when one starts playing, from `play()` or an interactive reaction, and with `null` when it ends |
 
 Unset `shape`, `eyes` and colours come from the name. `mouth` and `accessory` stay off until you set them.
 
@@ -116,6 +117,8 @@ A gaze is a pattern of where to look. It works with any activity and any eye sha
 
 An event is a one-off reaction. `play(event)` resolves when the animation ends. Each reaction first centres the eyes and settles for half a second, except when triggered by a click or press.
 
+An event does not change the `activity`, `expression` or `gaze` props. `EVENT_LAYERS[event]` names the expression and gaze it shows while it plays, for example `success` shows `happy` eyes looking `ahead`. Pair it with `onChange` to mirror the face in your own UI.
+
 | Event | Reaction |
 |---|---|
 | `acknowledge` | a double nod of the eyes |
@@ -123,7 +126,7 @@ An event is a one-off reaction. `play(event)` resolves when the animation ends. 
 | `done` | happy eyes with a small bounce |
 | `success` | a bigger, longer happy bounce |
 | `warning` | a wince: the eyes shift aside, heavy lids press down twice, the head dips and rises |
-| `failure` | sad lids, then the head and eyes sink, hold, and recover |
+| `error` | sad lids, then the head and eyes sink, hold, and recover |
 | `surprised` | a squint, then wide eyes with a tremble |
 | `angry` | inward lids, the eyes drop on a spring, the head dips |
 | `love` | the eyes tilt into one heart that beats three times |

@@ -6,6 +6,7 @@ export {
   type AvatarContent,
   type AvatarHandle,
   type AvatarProps,
+  EVENT_LAYERS,
   EXPRESSIONS,
   type Expression,
   GAZES,

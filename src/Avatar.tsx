@@ -95,6 +95,18 @@ const ACTIVITY_GAZE: Record<Activity, Gaze> = {
   sleeping: "ahead",
 };
 
+export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: Gaze }> = {
+  acknowledge: { expression: "neutral", gaze: "ahead" },
+  handoff: { expression: "neutral", gaze: "ahead" },
+  done: { expression: "happy", gaze: "ahead" },
+  success: { expression: "happy", gaze: "ahead" },
+  warning: { expression: "neutral", gaze: "ahead" },
+  error: { expression: "sad", gaze: "ahead" },
+  surprised: { expression: "surprised", gaze: "ahead" },
+  angry: { expression: "angry", gaze: "ahead" },
+  love: { expression: "love", gaze: "ahead" },
+};
+
 const ACTIVITY_POSE: Partial<Record<Activity, EyePose>> = {
   coding: "prompt",
   error: "cross",
@@ -127,6 +139,7 @@ export interface AvatarProps {
   motion?: boolean;
   mouth?: Mouth;
   name: string;
+  onChange?: (event: AvatarEvent | null) => void;
   renderMouth?: RenderMouth;
   shading?: number;
   shape?: Shape;
@@ -227,6 +240,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     motion = true,
     mouth,
     name,
+    onChange,
     renderMouth,
     shading = 0,
     shape,
@@ -245,6 +259,9 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const suppressClick = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [reacting, setReacting] = useState(false);
+  const latestOnChange = useRef(onChange);
+  latestOnChange.current = onChange;
+  const latestPlay = useRef(0);
 
   useEffect(() => setImageFailed(false), [src]);
 
@@ -321,7 +338,12 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   }, []);
 
   const play = useCallback(
-    (event: AvatarEvent, immediate = false) => run(event, EVENT_ANIMATIONS[event], immediate),
+    async (event: AvatarEvent, immediate = false) => {
+      const id = ++latestPlay.current;
+      latestOnChange.current?.(event);
+      await run(event, EVENT_ANIMATIONS[event], immediate);
+      if (id === latestPlay.current) latestOnChange.current?.(null);
+    },
     [run],
   );
 
