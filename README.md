@@ -101,9 +101,9 @@ An expression is a mood that can last for minutes, shown through the lids and, w
 | `sad` | top lids down, tilted outward |
 | `angry` | top lids down, tilted inward |
 | `confused` | one lid lowered |
-| `love` | both eyes tilt together into one beating heart |
-| `tired` | heavy top lids, drooping outward |
 | `curious` | both eyes slightly wider |
+| `tired` | heavy top lids, drooping outward |
+| `love` | both eyes tilt together into one beating heart |
 
 ### Gaze
 
