@@ -30,10 +30,3 @@ export {
   type SpecOptions,
   createSpec,
 } from "./spec.js";
-export {
-  AVATAR_VALUE_MAX_LENGTH,
-  type AvatarValue,
-  type ParsedAvatarValue,
-  formatAvatarValue,
-  parseAvatarValue,
-} from "./value.js";

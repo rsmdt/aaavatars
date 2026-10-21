@@ -11,7 +11,7 @@ npm install aaavatars
 ```
 
 ```tsx
-import { Avatar, AvatarGroup, type AvatarHandle, parseAvatarValue } from "aaavatars";
+import { Avatar, AvatarGroup, type AvatarHandle } from "aaavatars";
 
 const avatar = useRef<AvatarHandle>(null);
 
@@ -155,10 +155,6 @@ Each name blinks, glances and loops at its own tempo and phase, in CSS only. The
 ```tsx
 <AvatarGroup max={4} size={28} members={[{ name: "Ada", content: "initial" }, { name: "Research" }]} />
 ```
-
-## Stored value
-
-`formatAvatarValue({ shape: "hex", accessory: "hat" })` gives `shape=hex;accessory=hat`. `parseAvatarValue(text)` returns `{ ok: true, value }` to spread onto `<Avatar>`, or `{ ok: false, error }` naming the invalid field.
 
 ## Static SVG
 
