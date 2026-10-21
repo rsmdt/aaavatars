@@ -54,8 +54,10 @@ export const ACTIVITIES = [
   "thinking",
   "working",
   "reading",
+  "searching",
   "reviewing",
   "coding",
+  "writing",
   "waiting",
   "asking",
   "listening",
@@ -72,9 +74,13 @@ export const EXPRESSIONS = [
   "surprised",
   "confused",
   "love",
+  "focused",
+  "tired",
+  "frustrated",
+  "curious",
 ] as const;
 
-export const GAZES = ["follow", "ponder", "scan", "read", "wander", "ahead"] as const;
+export const GAZES = ["follow", "ponder", "scan", "read", "wander", "ahead", "down", "away"] as const;
 
 export type Activity = (typeof ACTIVITIES)[number];
 export type Expression = (typeof EXPRESSIONS)[number];
@@ -85,8 +91,10 @@ const ACTIVITY_GAZE: Record<Activity, Gaze> = {
   thinking: "ponder",
   working: "scan",
   reading: "read",
+  searching: "ahead",
   reviewing: "ahead",
   coding: "ahead",
+  writing: "read",
   waiting: "ahead",
   asking: "ahead",
   listening: "ahead",
@@ -104,6 +112,10 @@ export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: G
   surprised: { expression: "surprised", gaze: "ahead" },
   angry: { expression: "angry", gaze: "ahead" },
   love: { expression: "love", gaze: "ahead" },
+  sigh: { expression: "tired", gaze: "ahead" },
+  eureka: { expression: "surprised", gaze: "ahead" },
+  laugh: { expression: "happy", gaze: "ahead" },
+  yawn: { expression: "tired", gaze: "ahead" },
 };
 
 const ACTIVITY_POSE: Partial<Record<Activity, EyePose>> = {

@@ -7,6 +7,10 @@ export const AVATAR_EVENTS = [
   "surprised",
   "angry",
   "love",
+  "sigh",
+  "eureka",
+  "laugh",
+  "yawn",
 ] as const;
 
 import type { EyePose, Mood } from "./parts.js";
@@ -428,6 +432,158 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
     lids: [
       { offset: 0, top: 0, bottom: 0 },
       { offset: 2520 / 2880, top: 0, bottom: 0 },
+      { offset: 1 },
+    ],
+  },
+  sigh: {
+    mood: {
+      name: "o",
+      frames: [
+        { opacity: 0, transform: "scale(.5)", offset: 0.3 },
+        { opacity: 1, transform: "scale(.7)", offset: 0.42 },
+        { opacity: 1, transform: "scale(.45)", offset: 0.7 },
+        { opacity: 0, offset: 0.82 },
+      ],
+      rest: [
+        { opacity: 0, offset: 0.3 },
+        { opacity: 0, offset: 0.82 },
+      ],
+    },
+    accessory: {
+      ...stalk(hold("rotate(18deg)", 0.4, 0.75)),
+      hat: hold("translateY(3px)", 0.4, 0.75),
+      glasses: hold("translateY(2px)", 0.4, 0.75),
+      bowtie: hold("rotate(10deg)", 0.4, 0.75),
+    },
+    duration: 2100,
+    body: [
+      { transform: "translateY(0) scale(1)", offset: 0, easing: EASE_SINE },
+      { transform: "translateY(-1.5px) scale(1.02,1.03)", offset: 0.3, easing: EASE_SINK },
+      { transform: "translateY(3px) scale(1.03,.95)", offset: 0.55 },
+      { transform: "translateY(3px) scale(1.03,.95)", offset: 0.75, easing: EASE_SINE },
+      REST,
+    ],
+    eyes: [
+      { transform: "translateY(0)", offset: 0.3, easing: EASE_SINK },
+      { transform: "translateY(2px)", offset: 0.55 },
+      { transform: "translateY(2px)", offset: 0.75, easing: EASE_SINE },
+      REST,
+    ],
+    lids: [
+      { offset: 0, top: 0, bottom: 0 },
+      { offset: 0.3, top: 0.2, bottom: 0, easing: EASE_SINK },
+      { offset: 0.5, top: 0.65, bottom: 0 },
+      { offset: 0.78, top: 0.65, bottom: 0, easing: EASE_OUT },
+      { offset: 1 },
+    ],
+  },
+  eureka: {
+    mood: {
+      name: "o",
+      frames: [
+        { opacity: 1, transform: "scale(1.2)", offset: 0.12 },
+        { opacity: 1, transform: "scale(1.2)", offset: 0.4 },
+        { opacity: 0, offset: 0.55 },
+      ],
+      rest: [
+        { opacity: 0, offset: 0.12 },
+        { opacity: 0, offset: 0.5 },
+      ],
+    },
+    accessory: {
+      antenna: [
+        { transform: "scaleY(1.45)", offset: 0.15 },
+        { transform: "scaleY(.9)", offset: 0.4 },
+        { transform: "scaleY(1)", offset: 0.6 },
+      ],
+      sprout: hold("scale(1.4)", 0.12, 0.6),
+      hat: [
+        { transform: "translateY(-9px) rotate(-6deg)", offset: 0.18 },
+        { transform: "translateY(0)", offset: 0.45 },
+      ],
+      glasses: hold("translateY(-4px)", 0.12, 0.5),
+      bowtie: hold("scale(1.35)", 0.12, 0.5),
+    },
+    prep: 200,
+    duration: 1400,
+    body: [
+      { transform: "translateY(0) scale(1)", offset: 0, easing: EASE_OUT },
+      { transform: "translateY(-7px) scale(.97,1.05)", offset: 0.18, easing: EASE_SINE },
+      { transform: "translateY(0) scale(1.05,.95)", offset: 0.38, easing: EASE_OUT },
+      { transform: "translateY(0) scale(1)", offset: 0.55 },
+      REST,
+    ],
+    eyes: [
+      { transform: "scale(1)", offset: 0, easing: EASE_OUT },
+      { transform: "scale(1.38)", offset: 0.14 },
+      { transform: "scale(1.38)", offset: 0.5, easing: EASE_OUT },
+      REST,
+    ],
+  },
+  laugh: {
+    mood: {
+      name: "happy",
+      frames: sample(0.08, 0.82, 12, (t) => ({
+        opacity: 1,
+        transform: `scale(${(1.1 + 0.12 * Math.abs(Math.sin(t * Math.PI * 5))).toFixed(3)})`,
+      })),
+    },
+    accessory: {
+      ...stalk([
+        { transform: "rotate(-14deg)", offset: 0.2 },
+        { transform: "rotate(14deg)", offset: 0.45 },
+        { transform: "rotate(-8deg)", offset: 0.7 },
+      ]),
+      hat: hold("translateY(-3px) rotate(-6deg)", 0.1, 0.8),
+      glasses: hold("translateY(-2px)", 0.1, 0.8),
+      bowtie: hold("scale(1.25)", 0.1, 0.8),
+    },
+    duration: 1700,
+    body: [...sample(0.06, 0.86, 20, bob(2.6)), REST],
+    eyes: [...sample(0.06, 0.86, 20, bob(1.2)), REST],
+    lids: [
+      { offset: 0, top: 0, bottom: 0 },
+      { offset: 0.08, top: 0.25, bottom: 1 },
+      { offset: 0.84, top: 0.25, bottom: 1, easing: EASE_OUT },
+      { offset: 1 },
+    ],
+  },
+  yawn: {
+    mood: {
+      name: "o",
+      frames: [
+        { opacity: 1, transform: "scale(.6,.5)", offset: 0.1 },
+        { opacity: 1, transform: "scale(1.15,1.6)", offset: 0.4 },
+        { opacity: 1, transform: "scale(1.15,1.6)", offset: 0.58 },
+        { opacity: 0, transform: "scale(.6,.5)", offset: 0.75 },
+      ],
+      rest: [
+        { opacity: 0, offset: 0.1 },
+        { opacity: 0, offset: 0.75 },
+      ],
+    },
+    accessory: {
+      ...stalk(hold("rotate(-10deg)", 0.2, 0.65)),
+      hat: hold("translateY(-3px)", 0.2, 0.65),
+      glasses: hold("translateY(-3px)", 0.2, 0.65),
+      bowtie: hold("scale(1.15)", 0.2, 0.65),
+    },
+    duration: 2700,
+    body: [
+      { transform: "scale(1)", offset: 0, easing: EASE_SINE },
+      { transform: "translateY(-2px) scale(.95,1.07)", offset: 0.4 },
+      { transform: "translateY(-2px) scale(.95,1.07)", offset: 0.58, easing: EASE_SINE },
+      { transform: "translateY(0) scale(1.02,.98)", offset: 0.74, easing: EASE_OUT },
+      REST,
+    ],
+    eyes: [],
+    lids: [
+      { offset: 0, top: 0, bottom: 0, easing: EASE_SINE },
+      { offset: 0.38, top: 0.95, bottom: 0.9 },
+      { offset: 0.6, top: 0.95, bottom: 0.9, easing: EASE_IN_OUT },
+      { offset: 0.72, top: 0.45, bottom: 0 },
+      { offset: 0.8, top: 1, bottom: 1, easing: EASE_OUT },
+      { offset: 0.88, top: 0, bottom: 0 },
       { offset: 1 },
     ],
   },

@@ -26,9 +26,9 @@ await avatar.current?.play("success");
 |---|---|
 | `name` | seed string |
 | `frame` | `false` (no background), `0` (square) to `0.5` (circle) |
-| `activity` | `idle`, `thinking`, `working`, `reading`, `reviewing`, `coding`, `waiting`, `asking`, `listening`, `speaking`, `error`, `sleeping` |
-| `expression` | `neutral`, `happy`, `sad`, `angry`, `surprised`, `confused`, `love` |
-| `gaze` | `follow` (pointer), `ponder`, `scan`, `read`, `wander`, `ahead`; defaults per activity |
+| `activity` | `idle`, `thinking`, `working`, `reading`, `searching`, `reviewing`, `coding`, `writing`, `waiting`, `asking`, `listening`, `speaking`, `stuck`, `sleeping` |
+| `expression` | `neutral`, `happy`, `sad`, `angry`, `surprised`, `confused`, `love`, `focused`, `tired`, `frustrated`, `curious` |
+| `gaze` | `follow` (pointer), `ponder`, `scan`, `read`, `wander`, `ahead`, `down`, `away`; defaults per activity |
 | `shape` | `circle`, `squircle`, `pill`, `hex`, `triangle`, `drop`, `cloud`, `blob` |
 | `eyes` | `round`, `dot`, `tall`, `wide` |
 | `mouth` | `none`, `smile`, `flat`, `open`, or `renderMouth={(slot) => <svg element />}` |
@@ -79,8 +79,10 @@ An activity is the body language of a task. It is not a combination of an expres
 | `thinking` | sway | | `ponder` |
 | `working` | quick bob | | `scan` |
 | `reading` | still | | `read` |
+| `searching` | leans in | dart in short jumps and hold, looking for something | `ahead` |
 | `reviewing` | head dips with the eyes | narrow to a slit, look down, up, back, then down once more; a 6s loop | `ahead` |
 | `coding` | bob | morph into a sharp `>_` prompt with a blinking cursor | `ahead` |
+| `writing` | slow bob | | `read` |
 | `waiting` | still | settle to the centre, then circle around each other twice every 3.2s | `ahead` |
 | `asking` | head tilted | still, one eye wider: the person's turn to answer or approve | `ahead` |
 | `listening` | nod | slide together into one tall blinking cursor | `ahead` |
@@ -101,6 +103,10 @@ An expression is a lasting emotion, shown through the lids and, when set, the mo
 | `surprised` | wide |
 | `confused` | one lid lowered |
 | `love` | both eyes tilt together into one beating heart |
+| `focused` | top lids lowered and level, bottom lids slightly raised |
+| `tired` | heavy top lids, drooping outward |
+| `frustrated` | top lids pressed inward, bottom lids squeezed up, eyes flattened |
+| `curious` | one eye wider, the other lid slightly lowered |
 
 ### Gaze
 
@@ -114,6 +120,8 @@ A gaze is a pattern of where to look. It works with any activity and any eye sha
 | `scan` | sweep across: slow right, quick jump back |
 | `read` | read line by line: three short hops right, jump back and down a line, three lines, then back to the top |
 | `ahead` | look straight out |
+| `down` | look down at the work, drifting a little side to side |
+| `away` | look off to the side, with a brief check-in straight ahead |
 
 ### Event
 
@@ -131,6 +139,10 @@ An event does not change the `activity`, `expression` or `gaze` props. `EVENT_LA
 | `surprised` | a squint, then wide eyes with a tremble |
 | `angry` | inward lids, the eyes drop on a spring, the head dips |
 | `love` | the eyes tilt into one heart that beats three times |
+| `sigh` | a small breath in, then the lids sink and the head slumps before it recovers |
+| `eureka` | a jump up with eyes popping wide, then a squash back down |
+| `laugh` | happy squeezed eyes and quick little bounces |
+| `yawn` | the head stretches tall while the eyes close, then a blink awake |
 
 Under `prefers-reduced-motion`, or while the page is hidden, `play()` resolves immediately.
 

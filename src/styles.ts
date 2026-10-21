@@ -107,6 +107,11 @@ export const AVATAR_CSS = `
 .aaa[data-gaze=ponder] .aaa-gaze{animation:aaa-ponder ${gazeLoop(3.6)}}
 .aaa[data-gaze=scan] .aaa-gaze{animation:aaa-scan ${gazeLoop(1.6)}}
 .aaa[data-gaze=read] .aaa-gaze{animation:aaa-read ${gazeLoop(4.8)}}
+.aaa[data-gaze=down] .aaa-gaze{animation:aaa-down ${gazeLoop(7)}}
+.aaa[data-gaze=away] .aaa-gaze{animation:aaa-away ${gazeLoop(9)}}
+.aaa[data-activity=searching] .aaa-body-motion{transform:translateY(1px) scale(1.04)}
+.aaa[data-activity=searching][data-expression=neutral] .aaa-eye{animation:aaa-search ${loop(2.6, "linear")}}
+.aaa[data-activity=writing] .aaa-body-motion{animation:aaa-bob ${loop(2.4)}}
 .aaa[data-activity=working] .aaa-antenna-tip{animation:aaa-signal .9s ease-in-out infinite}
 .aaa[data-activity=thinking][data-expression=neutral] .aaa-mouth-rest{opacity:0}
 .aaa[data-activity=thinking][data-expression=neutral] .aaa-mood-small{opacity:1}
@@ -131,6 +136,9 @@ export const AVATAR_CSS = `
 .aaa:is([data-expression=sad],[data-expression=angry]) .aaa-mood-sad{opacity:1}
 .aaa[data-expression=surprised] .aaa-mood-o{opacity:1}
 .aaa[data-expression=confused] .aaa-mood-small{opacity:1}
+.aaa:is([data-expression=focused],[data-expression=tired]) .aaa-mood-flat{opacity:1}
+.aaa[data-expression=frustrated] .aaa-mood-sad{opacity:1;transform:scaleX(.7)}
+.aaa[data-expression=curious] .aaa-mood-o{opacity:1;transform:scale(.6)}
 .aaa:not([data-expression=neutral]) .aaa-lid{transform:none}
 .aaa:not([data-expression=neutral]) .aaa-eye{animation:none}
 .aaa[data-expression=happy] .aaa-lid-bottom{transform:${lid("-1")}}
@@ -144,6 +152,18 @@ export const AVATAR_CSS = `
 .aaa[data-expression=love] .aaa-eye-l{transform:${HEART(-1)}}
 .aaa[data-expression=love] .aaa-eye-r{transform:${HEART(1)}}
 .aaa[data-expression=love] .aaa-eyes-react{animation:aaa-heartbeat 1.52s infinite}
+.aaa[data-expression=focused] .aaa-lid-top{transform:${lid(".42")}}
+.aaa[data-expression=focused] .aaa-lid-bottom{transform:${lid("-.22")}}
+.aaa[data-expression=tired] .aaa-lid-top.aaa-lid-l{transform:${lid(".6")} rotate(-7deg)}
+.aaa[data-expression=tired] .aaa-lid-top.aaa-lid-r{transform:${lid(".6")} rotate(7deg)}
+.aaa[data-expression=tired] .aaa-lid-bottom{transform:${lid("-.12")}}
+.aaa[data-expression=frustrated] .aaa-lid-top.aaa-lid-l{transform:${lid(".5")} rotate(9deg)}
+.aaa[data-expression=frustrated] .aaa-lid-top.aaa-lid-r{transform:${lid(".5")} rotate(-9deg)}
+.aaa[data-expression=frustrated] .aaa-lid-bottom{transform:${lid("-.45")}}
+.aaa[data-expression=frustrated] .aaa-eyes-motion{transform:scale(1.08,.92)}
+.aaa[data-expression=curious] .aaa-eye-l{transform:scale(1.2)}
+.aaa[data-expression=curious] .aaa-eye-r{transform:scale(1.04)}
+.aaa[data-expression=curious] .aaa-lid-top.aaa-lid-r{transform:${lid(".28")} rotate(-6deg)}
 .aaa[data-reacting] .aaa-gaze,.aaa[data-reacting] .aaa-blink,.aaa[data-reacting] .aaa-eye{animation:none}
 .aaa[data-reacting] .aaa-look{--aaa-look-x:0px;--aaa-look-y:0px;--aaa-look-sx:1}
 .aaa[data-reacting] .aaa-head{--aaa-head-x:0px;--aaa-head-y:0px;--aaa-head-r:0deg}
@@ -222,6 +242,50 @@ ${timeline("aaa-inspect-head", 6080, [
   [2720, "translateY(0)"],
   [6080, "translateY(0)"],
 ])}
+${glances(
+  "aaa-down",
+  [
+    [0, -2, 5],
+    [30, 1, 5.5],
+    [55, 3, 5],
+    [70, 3, 5],
+    [85, -1, 5.5],
+    [100, -2, 5],
+  ],
+  8,
+)}
+${glances(
+  "aaa-away",
+  [
+    [0, 6, 1.5],
+    [40, 6, 2],
+    [48, 5.5, -1],
+    [72, 6, 1.5],
+    [76, 0, 0],
+    [84, 0, 0],
+    [88, 6, 1.5],
+    [100, 6, 1.5],
+  ],
+  1.5,
+)}
+${glances(
+  "aaa-search",
+  [
+    [0, -5, -2],
+    [10, 4, -3],
+    [20, 4, -3],
+    [26, -3, 2],
+    [38, -3, 2],
+    [44, 5, 1],
+    [56, 5, 1],
+    [62, -1, -4],
+    [74, -1, -4],
+    [80, -5, 3],
+    [92, -5, 3],
+    [100, -5, -2],
+  ],
+  2.5,
+)}
 @keyframes aaa-scan{0%{transform:${gazeTransform(-4, 1)};animation-timing-function:cubic-bezier(.45,.05,.55,.95)}70%{transform:${gazeTransform(4, 1)};animation-timing-function:${EASE_OUT}}80%,100%{transform:${gazeTransform(-4, 1)}}}
 ${orbit("aaa-orbit-l", -1)}
 ${orbit("aaa-orbit-r", 1)}

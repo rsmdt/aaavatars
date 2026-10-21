@@ -667,9 +667,52 @@ describe("Avatar", () => {
     const { container, rerender } = render(<Avatar mouth="none" name="a" />);
     expect(container.querySelector(".aaa-mood")).toBeNull();
     rerender(<Avatar mouth="smile" name="a" />);
-    expect(container.querySelectorAll(".aaa-mood")).toHaveLength(4);
+    expect(container.querySelectorAll(".aaa-mood")).toHaveLength(5);
     rerender(<Avatar content="initial" mouth="smile" name="a" />);
     expect(container.querySelector(".aaa-mood")).toBeNull();
+  });
+
+  it("gives every new work feeling its own lids", () => {
+    for (const expression of ["focused", "tired", "frustrated", "curious"] as const) {
+      const { container, unmount } = render(<Avatar expression={expression} name="a" />);
+      expect(container.querySelector("svg")!.dataset.expression).toBe(expression);
+      expect(AVATAR_CSS).toContain(`.aaa[data-expression=${expression}]`);
+      unmount();
+    }
+  });
+
+  it("searches with darting eyes and writes along a line", () => {
+    const { container, rerender } = render(<Avatar activity="searching" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=searching][data-expression=neutral] .aaa-eye{animation:aaa-search");
+    rerender(<Avatar activity="writing" name="a" />);
+    expect(container.querySelector("svg")!.dataset.gaze).toBe("read");
+    expect(AVATAR_CSS).toContain(".aaa[data-activity=writing] .aaa-body-motion{animation:aaa-bob");
+  });
+
+  it("looks down at the work or away from the viewer", () => {
+    expect(AVATAR_CSS).toContain(".aaa[data-gaze=down] .aaa-gaze{animation:aaa-down");
+    expect(AVATAR_CSS).toContain(".aaa[data-gaze=away] .aaa-gaze{animation:aaa-away");
+  });
+
+  it("plays the new reactions", async () => {
+    stubMatchMedia(false);
+    const { animate, finishAll } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    render(<Avatar ref={ref} name="a" />);
+    for (const event of ["sigh", "eureka", "laugh", "yawn"] as const) {
+      expect(AVATAR_EVENTS).toContain(event);
+      animate.mockClear();
+      let played!: Promise<void>;
+      act(() => {
+        played = ref.current!.play(event);
+      });
+      expect(animate).toHaveBeenCalled();
+      await act(async () => {
+        finishAll();
+        await played;
+      });
+    }
   });
 
   it("shades the head like soft clay by default, with a sheen that rides the gaze", () => {

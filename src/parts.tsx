@@ -233,7 +233,7 @@ export function MouthShape({ mouth, slot }: { mouth: Mouth; slot: MouthSlot }) {
   return null;
 }
 
-export const MOODS = ["happy", "sad", "o", "small"] as const;
+export const MOODS = ["happy", "sad", "o", "small", "flat"] as const;
 
 export type Mood = (typeof MOODS)[number];
 
@@ -257,6 +257,9 @@ export function MoodMouths({ slot }: { slot: MouthSlot }) {
       </g>
       <g className="aaa-mood aaa-mood-small">
         <path d={`M${x + 1} ${y}H${x + 9}`} stroke={color} {...STROKE} />
+      </g>
+      <g className="aaa-mood aaa-mood-flat">
+        <path d={`M${x - half * 0.5} ${y + 1}H${x + half * 0.5}`} stroke={color} {...STROKE} />
       </g>
     </>
   );
