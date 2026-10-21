@@ -85,7 +85,7 @@ export function Appearance({ look, onChange }: { look: Look; onChange: (patch: P
         <Switch checked={look.blink} onChange={(blink) => onChange({ blink })}>
           Blink
         </Switch>
-        <Switch checked={look.motion} onChange={(motion) => onChange({ motion })}>
+        <Switch checked={look.loop} onChange={(loop) => onChange({ loop })}>
           Loop
         </Switch>
         <Switch checked={look.interactive} onChange={(interactive) => onChange({ interactive })}>

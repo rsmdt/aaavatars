@@ -17,7 +17,7 @@ function Demo() {
     <div className="mx-auto flex max-w-[1200px] flex-col gap-28 px-6 pt-6 pb-16">
       <div className="flex flex-col gap-12">
         <header className="flex items-center gap-3">
-          <Avatar frame={0.3} name="aaavatars" size={30} />
+          <Avatar blink loop frame={0.3} name="aaavatars" size={30} />
           <span className="font-semibold">aaavatars</span>
           <a aria-label="GitHub" className="ml-auto text-subtle hover:text-ink" href={REPOSITORY}>
             <svg aria-hidden="true" className="size-6" fill="currentColor" viewBox="0 0 16 16">

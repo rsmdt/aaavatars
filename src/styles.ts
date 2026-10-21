@@ -157,7 +157,7 @@ export const AVATAR_CSS = `
 .aaa[data-reacting] .aaa-look{--aaa-look-x:0px;--aaa-look-y:0px;--aaa-look-sx:1}
 .aaa[data-reacting] .aaa-head{--aaa-head-x:0px;--aaa-head-y:0px;--aaa-head-r:0deg}
 .aaa[data-blink=off] .aaa-blink{animation:none}
-.aaa[data-motion=off] *{animation:none!important}
+.aaa[data-loop=off] *:not(.aaa-blink){animation:none!important}
 .aaa[data-offscreen] *{animation-play-state:paused!important}
 ${blinks([3, 21, 47, 66, 88], 0.6)}
 ${glances(

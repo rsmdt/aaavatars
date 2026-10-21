@@ -369,7 +369,7 @@ describe("Avatar", () => {
   });
 
   it("renders no background or clip without a frame", () => {
-    const { container } = render(<Avatar frame={false} name="a" />);
+    const { container } = render(<Avatar name="a" />);
     expect(container.querySelector("[data-frame]")).toBeNull();
     expect(container.querySelector(`clipPath[id$="-frame"]`)).toBeNull();
   });
@@ -456,11 +456,23 @@ describe("Avatar", () => {
     );
   });
 
-  it("switches blink and motion off through data attributes", () => {
-    const { container } = render(<Avatar blink={false} motion={false} name="a" />);
+  it("keeps blinking and looping off until they are turned on", () => {
+    const { container } = render(<Avatar name="a" />);
     const svg = container.querySelector("svg")!;
     expect(svg.dataset.blink).toBe("off");
-    expect(svg.dataset.motion).toBe("off");
+    expect(svg.dataset.loop).toBe("off");
+    expect(svg.dataset.interactive).toBeUndefined();
+  });
+
+  it("turns blinking and looping on when asked", () => {
+    const { container } = render(<Avatar blink loop name="a" />);
+    const svg = container.querySelector("svg")!;
+    expect(svg.dataset.blink).toBeUndefined();
+    expect(svg.dataset.loop).toBeUndefined();
+  });
+
+  it("keeps a blink running while looping is off", () => {
+    expect(AVATAR_CSS).toContain(".aaa[data-loop=off] *:not(.aaa-blink){animation:none!important}");
   });
 
   it("follows the pointer anywhere on the page only while the gaze is follow", () => {

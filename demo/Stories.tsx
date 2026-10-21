@@ -47,7 +47,7 @@ function BlackBox() {
       </div>
       <div className="flex flex-col items-center gap-4 p-4">
         <span className="font-mono text-xs tracking-widest text-subtle">WITH</span>
-        <Avatar activity="reading" expression="happy" name="Analyst" size={96} />
+        <Avatar blink loop activity="reading" expression="happy" frame={0.5} name="Analyst" size={96} />
         <span className="text-[15px]">On it. Reading last quarter's numbers.</span>
         <span className="-mt-3 text-xs text-subtle">0:38 · on sheet 4 of 6</span>
       </div>
@@ -79,7 +79,7 @@ function BackgroundWork() {
   return (
     <div>
       <div className="flex items-center gap-5">
-        <Avatar ref={avatar} activity={current.activity} name="Background Worker" size={72} />
+        <Avatar ref={avatar} blink loop activity={current.activity} frame={0.5} name="Background Worker" size={72} />
         <div className="min-w-0">
           <span className="rounded-full border border-[#e3c9bf] bg-[#f7ece7] px-2 py-0.5 font-mono text-[11px] text-[#9a4a2c]">
             ● App closed · still running in the cloud
@@ -124,8 +124,11 @@ function Workers() {
         >
           <div className="flex items-center gap-3">
             <Avatar
+              blink
+              loop
               activity={worker.activity}
               expression={worker.expression}
+              frame={0.5}
               name={worker.name}
               size={44}
             />
@@ -194,8 +197,11 @@ export function LovedByBots() {
             >
               <div className="flex items-center gap-3">
                 <Avatar
+                  blink
+                  loop
                   activity={quote.activity}
                   expression={quote.expression}
+                  frame={0.5}
                   name={quote.handle}
                   size={44}
                 />

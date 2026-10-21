@@ -136,11 +136,11 @@ export interface AvatarProps {
   expression?: Expression;
   eyes?: Eyes;
   fill?: Fill;
-  frame?: false | number;
+  frame?: number;
   gaze?: Gaze;
   interactive?: boolean;
   label?: string;
-  motion?: boolean;
+  loop?: boolean;
   mouth?: Mouth;
   name: string;
   onChange?: (event: AvatarEvent | null) => void;
@@ -218,9 +218,9 @@ function clampFrame(frame: number): number {
   return Math.min(Math.max(frame, 0), 0.5);
 }
 
-export function frameRadius(frame: false | number | undefined): string | undefined {
-  if (frame === false) return undefined;
-  return `${clampFrame(frame ?? 0.5) * 100}%`;
+export function frameRadius(frame: number | undefined): string | undefined {
+  if (frame === undefined) return undefined;
+  return `${clampFrame(frame) * 100}%`;
 }
 
 export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
@@ -229,7 +229,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     activity = "idle",
     background,
     badge,
-    blink = true,
+    blink = false,
     body,
     className,
     colors,
@@ -237,11 +237,11 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     expression = "neutral",
     eyes,
     fill = "solid",
-    frame = 0.5,
+    frame,
     gaze,
     interactive = false,
     label,
-    motion = true,
+    loop = false,
     mouth,
     name,
     onChange,
@@ -274,7 +274,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     [name, accessory, background, body, colors, eyes, mouth, shape],
   );
   const geometry = SHAPE_GEOMETRY[spec.shape];
-  const framed = frame !== false;
+  const framed = frame !== undefined;
   const radius = framed ? clampFrame(frame) * 100 : 0;
   const showImage = Boolean(src) && !imageFailed;
   const hasMouth = content === "face" && (Boolean(renderMouth) || spec.mouth !== "none");
@@ -444,7 +444,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       data-expression={shownExpression}
       data-gaze={resolvedGaze}
       data-interactive={interactive ? "" : undefined}
-      data-motion={motion ? undefined : "off"}
+      data-loop={loop ? undefined : "off"}
       height={size}
       overflow={framed ? undefined : "visible"}
       role="img"

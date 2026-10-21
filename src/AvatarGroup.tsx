@@ -34,7 +34,7 @@ export function AvatarGroup({
           key={`${member.name}-${index}`}
           style={{
             borderRadius: frameRadius(member.frame),
-            boxShadow: member.frame === false ? undefined : `0 0 0 2px ${ringColor}`,
+            boxShadow: member.frame === undefined ? undefined : `0 0 0 2px ${ringColor}`,
             display: "inline-flex",
             marginLeft: index === 0 ? 0 : offset,
             zIndex: visible.length - index,

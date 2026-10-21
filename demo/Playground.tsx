@@ -40,9 +40,8 @@ function avatarSnippet(props: Record<string, PropValue>): string {
   return `import { Avatar } from "aaavatars";\n\n<Avatar\n${attributes.join("\n")}\n/>`;
 }
 
-function frameProp(look: Look): false | number | undefined {
-  if (!look.framed) return false;
-  return look.radius === 0.5 ? undefined : look.radius;
+function frameProp(look: Look): number | undefined {
+  return look.framed ? look.radius : undefined;
 }
 
 function isTyping(target: EventTarget | null): boolean {
@@ -82,8 +81,8 @@ export function Playground({
     shading: look.shading || undefined,
     frame: frameProp(look),
     content: look.content === "face" ? undefined : look.content,
-    blink: look.blink ? undefined : false,
-    motion: look.motion ? undefined : false,
+    blink: look.blink || undefined,
+    loop: look.loop || undefined,
     interactive: look.interactive || undefined,
   });
 
@@ -154,6 +153,8 @@ export function Playground({
                   colors: props.colors,
                   fill: look.fill,
                   frame: props.frame,
+                  blink: props.blink,
+                  loop: props.loop,
                   shading: look.shading,
                 })),
               ]}

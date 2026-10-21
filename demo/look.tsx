@@ -74,7 +74,7 @@ export interface Look {
   fill?: Fill;
   framed: boolean;
   interactive: boolean;
-  motion: boolean;
+  loop: boolean;
   mouth?: Mouth;
   name: string;
   palette: number;
@@ -90,7 +90,7 @@ export const DEFAULT_LOOK: Look = {
   content: "face",
   framed: true,
   interactive: true,
-  motion: true,
+  loop: true,
   name: "Chief of Staff",
   palette: 0,
   radius: 0.2,
@@ -114,8 +114,8 @@ export function lookProps(look: Look) {
     content: look.content,
     eyes: look.eyes,
     fill: look.fill,
-    frame: look.framed ? look.radius : false,
-    motion: look.motion,
+    frame: look.framed ? look.radius : undefined,
+    loop: look.loop,
     mouth: look.mouth,
     name: look.name.trim() || "aaavatars",
     shading: look.shading,

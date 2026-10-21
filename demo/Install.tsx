@@ -15,16 +15,19 @@ const RENDER = `import { Avatar } from "aaavatars";
 
 <Avatar
   name="Research"
+  blink
+  loop
   activity="coding"
   expression="happy"
   gaze="follow"
+  frame={0.5}
 />`;
 
 const PLAY = `import { Avatar, type AvatarHandle } from "aaavatars";
 
 const avatar = useRef<AvatarHandle>(null);
 
-<Avatar ref={avatar} name="Research" activity="working" />;
+<Avatar ref={avatar} name="Research" activity="working" blink loop frame={0.5} />;
 
 await avatar.current?.play("success");`;
 
