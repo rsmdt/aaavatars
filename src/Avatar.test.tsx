@@ -61,7 +61,7 @@ describe("Avatar", () => {
   });
 
   it("leans the eyes into one heart for love, whatever the activity", () => {
-    const { container } = render(<Avatar activity="error" expression="love" name="a" />);
+    const { container } = render(<Avatar activity="stuck" expression="love" name="a" />);
     expect(container.querySelectorAll(".aaa-eye")).toHaveLength(2);
     expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-l{transform:translateX(");
     expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-r{transform:translateX(");
@@ -109,7 +109,7 @@ describe("Avatar", () => {
   it("draws every eye pose with the same path commands so it can morph", () => {
     const { container, rerender } = render(<Avatar name="a" />);
     for (const eyes of ["dot", "round", "tall", "wide"] as const) {
-      for (const activity of ["idle", "coding", "error", "listening"] as const) {
+      for (const activity of ["idle", "coding", "stuck", "listening"] as const) {
         rerender(<Avatar activity={activity} eyes={eyes} name="a" />);
         for (const shape of container.querySelectorAll(".aaa-shape")) {
           expect(shape.getAttribute("d")).toMatch(/^M[^A-Z]*(C[^A-Z]*){12}Z$/);
@@ -172,8 +172,8 @@ describe("Avatar", () => {
     expect(AVATAR_CSS).toContain(".aaa[data-activity=sleeping] .aaa-lid-top{transform:translateY(calc(var(--aaa-eye-h)*.85px))}");
   });
 
-  it("turns both eyes into crosses during an error", () => {
-    const { container } = render(<Avatar activity="error" name="a" />);
+  it("turns both eyes into crosses while stuck", () => {
+    const { container } = render(<Avatar activity="stuck" name="a" />);
     const shapes = [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
     expect(shapes).toEqual(["cross", "cross"]);
     expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
@@ -229,15 +229,34 @@ describe("Avatar", () => {
     expect(AVATAR_EVENTS).not.toContain("wake");
   });
 
-  it("sweeps the eyes once when an error starts, but not on mount", () => {
+  it("sweeps the eyes once when it gets stuck, but not on mount", () => {
     stubMatchMedia(false);
     const { animate } = stubAnimate();
-    const { container, rerender } = render(<Avatar activity="error" name="a" />);
+    const { container, rerender } = render(<Avatar activity="stuck" name="a" />);
     expect(animate).not.toHaveBeenCalled();
     rerender(<Avatar activity="idle" name="a" />);
-    rerender(<Avatar activity="error" name="a" />);
+    rerender(<Avatar activity="stuck" name="a" />);
     expect(animate).toHaveBeenCalled();
-    expect(container.querySelector("svg")!.dataset.reacting).toBe("error");
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("stuck");
+  });
+
+  it("shows x x eyes while the error event plays, then round eyes again", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} name="a" />);
+    const shapes = () => [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+
+    let played!: Promise<void>;
+    act(() => {
+      played = ref.current!.play("error");
+    });
+    expect(shapes()).toEqual(["cross", "cross"]);
+    await act(async () => {
+      finishAll();
+      await played;
+    });
+    expect(shapes()).toEqual(["eye", "eye"]);
   });
 
   it("settles to neutral before a played reaction, but reacts at once to a click", () => {
@@ -362,7 +381,7 @@ describe("Avatar", () => {
     render(<Avatar ref={ref} accessory="none" mouth="none" name="a" />);
 
     let resolved = false;
-    const playing = ref.current!.play("done").then(() => {
+    const playing = ref.current!.play("success").then(() => {
       resolved = true;
     });
     expect(animate).toHaveBeenCalledTimes(6);
@@ -395,7 +414,7 @@ describe("Avatar", () => {
     const ref = createRef<AvatarHandle>();
     render(<Avatar ref={ref} name="a" />);
 
-    await expect(ref.current!.play("done")).resolves.toBeUndefined();
+    await expect(ref.current!.play("success")).resolves.toBeUndefined();
     expect(animate).not.toHaveBeenCalled();
   });
 
@@ -605,14 +624,14 @@ describe("Avatar", () => {
     let first!: Promise<void>;
     let second!: Promise<void>;
     act(() => {
-      first = ref.current!.play("done");
+      first = ref.current!.play("success");
       second = ref.current!.play("error");
     });
     await act(async () => {
       finishAll();
       await Promise.all([first, second]);
     });
-    expect(onChange.mock.calls).toEqual([["done"], ["error"], [null]]);
+    expect(onChange.mock.calls).toEqual([["success"], ["error"], [null]]);
   });
 
   it("play moves the mouth and the accessory with the mood", () => {

@@ -63,7 +63,7 @@ export const QUOTES: Quote[] = [
   },
   {
     handle: "@hotfix",
-    activity: "error",
+    activity: "stuck",
     text: "One sweep, then x x. My stack traces feel seen.",
   },
   {

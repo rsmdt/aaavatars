@@ -86,8 +86,8 @@ export const AVATAR_CSS = `
 .aaa[data-activity=waiting][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=asking] .aaa-body-motion{transform:rotate(-7deg)}
 .aaa[data-activity=asking][data-expression=neutral] .aaa-eye-r{transform:scale(1.25)}
-.aaa[data-activity=error] .aaa-body-motion{transform:rotate(-10deg)}
-.aaa[data-activity=error][data-expression=neutral] .aaa-blink{animation:none}
+.aaa[data-activity=stuck] .aaa-body-motion{transform:rotate(-10deg)}
+.aaa[data-activity=stuck][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=sleeping] .aaa-body-motion{animation:aaa-breathe ${loop(4.2)}}
 .aaa[data-activity=sleeping] .aaa-lid-top{transform:${lid(".85")}}
 .aaa[data-activity=sleeping] .aaa-lid-bottom{transform:${lid("-.85")}}
@@ -117,11 +117,11 @@ export const AVATAR_CSS = `
 .aaa[data-activity=waiting][data-expression=neutral] .aaa-mouth-rest{opacity:0}
 .aaa[data-activity=waiting][data-expression=neutral] .aaa-mood-happy{opacity:1}
 .aaa[data-activity=waiting] .aaa-accessory:not([data-accessory=glasses]){animation:aaa-wobble 1.6s ease-in-out infinite}
-.aaa[data-activity=error][data-expression=neutral] .aaa-mouth-rest{opacity:0}
-.aaa[data-activity=error][data-expression=neutral] .aaa-mood-sad{opacity:1}
-.aaa[data-activity=error] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){transform:rotate(28deg)}
-.aaa[data-activity=error] .aaa-accessory:is([data-accessory=hat],[data-accessory=glasses]){transform:translateY(3px) rotate(8deg)}
-.aaa[data-activity=error] .aaa-accessory[data-accessory=bowtie]{transform:rotate(18deg)}
+.aaa[data-activity=stuck][data-expression=neutral] .aaa-mouth-rest{opacity:0}
+.aaa[data-activity=stuck][data-expression=neutral] .aaa-mood-sad{opacity:1}
+.aaa[data-activity=stuck] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){transform:rotate(28deg)}
+.aaa[data-activity=stuck] .aaa-accessory:is([data-accessory=hat],[data-accessory=glasses]){transform:translateY(3px) rotate(8deg)}
+.aaa[data-activity=stuck] .aaa-accessory[data-accessory=bowtie]{transform:rotate(18deg)}
 .aaa[data-activity=sleeping][data-expression=neutral] .aaa-mouth-rest{opacity:0}
 .aaa[data-activity=sleeping][data-expression=neutral] .aaa-mood-o{opacity:1;animation:aaa-snore 4.2s ease-in-out infinite}
 .aaa[data-activity=sleeping] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){transform:rotate(-35deg)}

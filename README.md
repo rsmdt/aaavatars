@@ -17,7 +17,7 @@ const avatar = useRef<AvatarHandle>(null);
 
 <Avatar ref={avatar} name="Chief of Staff" size={36} activity="coding" label="Writing code" />;
 
-await avatar.current?.play("done");
+await avatar.current?.play("success");
 ```
 
 ## Avatar
@@ -62,7 +62,7 @@ The eyes carry every layer, so a face without a mouth still reads. Each eye has 
 
 When two layers want the same part of the face, the more specific one wins:
 
-1. An event owns the whole face while it plays. Glyph eyes morph back to round eyes for it and return when it ends.
+1. An event owns the whole face while it plays. Glyph eyes morph back to round eyes for it, except `error`, which morphs them into `x x`, and return when it ends.
 2. A non-`neutral` expression owns the eyes, the blinking and, when a mouth is set, the mouth.
 3. The activity owns the body motion, the accessory motion and, while the expression is `neutral`, the eye pose and the mouth.
 4. The gaze moves where the eyes point. It never changes their shape.
@@ -85,7 +85,7 @@ An activity is the body language of a task. It is not a combination of an expres
 | `asking` | head tilted | still, one eye wider: the person's turn to answer or approve | `ahead` |
 | `listening` | nod | slide together into one tall blinking cursor | `ahead` |
 | `speaking` | bob, mouth talks | | `follow` |
-| `error` | tilted | sweep side to side once, then morph into sharp `x x` crosses | `ahead` |
+| `stuck` | tilted | sweep side to side once, then morph into sharp `x x` crosses | `ahead` |
 | `sleeping` | breathe, sunk | droop, catch themselves once, droop again and close. Leaving it wakes them: half-open, wide, back to rest | `ahead` |
 
 ### Expression
@@ -125,10 +125,9 @@ An event does not change the `activity`, `expression` or `gaze` props. `EVENT_LA
 |---|---|
 | `acknowledge` | a double nod of the eyes |
 | `handoff` | eyes and body lean to the side, then return |
-| `done` | happy eyes with a small bounce |
-| `success` | a bigger, longer happy bounce |
+| `success` | happy eyes with a long bounce |
 | `warning` | a wince: the eyes shift aside, heavy lids press down twice, the head dips and rises |
-| `error` | sad lids, then the head and eyes sink, hold, and recover |
+| `error` | the eyes morph into `x x` crosses, then the head and eyes sink, hold, and recover |
 | `surprised` | a squint, then wide eyes with a tremble |
 | `angry` | inward lids, the eyes drop on a spring, the head dips |
 | `love` | the eyes tilt into one heart that beats three times |

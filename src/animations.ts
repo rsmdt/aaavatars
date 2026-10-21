@@ -1,7 +1,6 @@
 export const AVATAR_EVENTS = [
   "acknowledge",
   "handoff",
-  "done",
   "success",
   "warning",
   "error",
@@ -10,7 +9,7 @@ export const AVATAR_EVENTS = [
   "love",
 ] as const;
 
-import type { Mood } from "./parts.js";
+import type { EyePose, Mood } from "./parts.js";
 import type { Accessory } from "./spec.js";
 
 export type AvatarEvent = (typeof AVATAR_EVENTS)[number];
@@ -40,6 +39,7 @@ export interface EventAnimation {
   lids?: LidFrame[];
   mood?: { frames?: Keyframe[]; name: Mood; rest?: Keyframe[] };
   mouth?: Keyframe[];
+  pose?: EyePose;
   prep?: number;
 }
 
@@ -237,30 +237,6 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       REST,
     ],
   },
-  done: {
-    mood: { name: "happy" },
-    accessory: {
-      antenna: [{ transform: "scaleY(1.25)", offset: 0.3 }],
-      sprout: [{ transform: "scale(1.25)", offset: 0.3 }],
-      hat: hold("translateY(-3px) rotate(-10deg)", 0.3, 0.7),
-      glasses: [{ transform: "translateY(-3px)", offset: 0.3 }],
-      bowtie: [{ transform: "scale(1.3)", offset: 0.3 }],
-    },
-    duration: 1100,
-    body: [
-      { transform: "translateY(0)", offset: 0, easing: EASE_HEAD },
-      { transform: "translateY(-1.5px)", offset: 0.3, easing: EASE_HEAD },
-      { transform: "translateY(0)", offset: 0.6 },
-      REST,
-    ],
-    eyes: [...sample(0.2, 0.6, 10, bob(1.8)), REST],
-    lids: [
-      { offset: 0, top: 0, bottom: 0 },
-      { offset: 0.2, top: 0, bottom: 1 },
-      { offset: 0.65, top: 0, bottom: 1, easing: EASE_IN_OUT },
-      { offset: 1 },
-    ],
-  },
   success: {
     mood: {
       name: "happy",
@@ -316,12 +292,7 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { transform: "translateY(2px)", offset: 0.772, easing: EASE_SINE },
       REST,
     ],
-    lids: [
-      { offset: 0, top: 0, bottom: 0 },
-      { offset: 0.14, top: 0.8, bottom: 0, tilt: 16 },
-      { offset: 0.772, top: 0.8, bottom: 0, tilt: 16, easing: EASE_OUT },
-      { offset: 1 },
-    ],
+    pose: "cross",
   },
   surprised: {
     mood: {
@@ -527,7 +498,7 @@ export const SLEEP_ANIMATION: EventAnimation = {
   ],
 };
 
-export const ERROR_ANIMATION: EventAnimation = {
+export const STUCK_ANIMATION: EventAnimation = {
   prep: 420,
   duration: 1380,
   body: [

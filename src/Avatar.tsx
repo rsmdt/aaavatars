@@ -15,7 +15,6 @@ import {
 
 import {
   type AvatarEvent,
-  ERROR_ANIMATION,
   EVENT_ANIMATIONS,
   type EventAnimation,
   type LidFrame,
@@ -23,6 +22,7 @@ import {
   MOOD_SWAP_SHOW,
   PREP_MS,
   SLEEP_ANIMATION,
+  STUCK_ANIMATION,
   WAKE_ANIMATION,
   stage,
 } from "./animations.js";
@@ -60,7 +60,7 @@ export const ACTIVITIES = [
   "asking",
   "listening",
   "speaking",
-  "error",
+  "stuck",
   "sleeping",
 ] as const;
 
@@ -91,17 +91,16 @@ const ACTIVITY_GAZE: Record<Activity, Gaze> = {
   asking: "ahead",
   listening: "ahead",
   speaking: "follow",
-  error: "ahead",
+  stuck: "ahead",
   sleeping: "ahead",
 };
 
 export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: Gaze }> = {
   acknowledge: { expression: "neutral", gaze: "ahead" },
   handoff: { expression: "neutral", gaze: "ahead" },
-  done: { expression: "happy", gaze: "ahead" },
   success: { expression: "happy", gaze: "ahead" },
   warning: { expression: "neutral", gaze: "ahead" },
-  error: { expression: "sad", gaze: "ahead" },
+  error: { expression: "neutral", gaze: "ahead" },
   surprised: { expression: "surprised", gaze: "ahead" },
   angry: { expression: "angry", gaze: "ahead" },
   love: { expression: "love", gaze: "ahead" },
@@ -109,7 +108,7 @@ export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: G
 
 const ACTIVITY_POSE: Partial<Record<Activity, EyePose>> = {
   coding: "prompt",
-  error: "cross",
+  stuck: "cross",
   listening: "cursor",
 };
 
@@ -258,7 +257,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const drag = useRef<DragState | null>(null);
   const suppressClick = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const [reacting, setReacting] = useState(false);
+  const [reacting, setReacting] = useState<EyePose | null>(null);
   const latestOnChange = useRef(onChange);
   latestOnChange.current = onChange;
   const latestPlay = useRef(0);
@@ -277,7 +276,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const accessoryBehind = spec.accessory === "antenna" || spec.accessory === "sprout";
   const resolvedGaze = gaze ?? ACTIVITY_GAZE[activity];
   const shownExpression = activity === "sleeping" ? "neutral" : expression;
-  const pose = shownExpression === "neutral" && !reacting ? (ACTIVITY_POSE[activity] ?? "eye") : "eye";
+  const pose =
+    reacting ?? (shownExpression === "neutral" ? (ACTIVITY_POSE[activity] ?? "eye") : "eye");
   const tracksPointer = resolvedGaze === "follow" && !showImage;
   const slot = mouthSlot(geometry, spec.eyeColor);
   const bodyFill = fill === "gradient" ? `url(#${uid}-fill)` : spec.body;
@@ -327,7 +327,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     );
     running.current = started;
     root?.setAttribute("data-reacting", name);
-    setReacting(true);
+    setReacting(animation.pose ?? "eye");
     return Promise.all(started.map((animation) => animation.finished)).then(
       () => undefined,
       () => undefined,
@@ -335,7 +335,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       if (running.current !== started || !root) return;
       restartGazeCentred(root);
       root.removeAttribute("data-reacting");
-      setReacting(false);
+      setReacting(null);
     });
   }, []);
 
@@ -359,7 +359,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     if (previous === activity) return;
     if (activity === "sleeping") void run("sleep", SLEEP_ANIMATION);
     else if (previous === "sleeping") void run("wake", WAKE_ANIMATION);
-    else if (activity === "error") void run("error", ERROR_ANIMATION);
+    else if (activity === "stuck") void run("stuck", STUCK_ANIMATION);
   }, [activity, play, run]);
 
   useEffect(() => {
