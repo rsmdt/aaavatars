@@ -5,11 +5,7 @@ export const AVATAR_EVENTS = [
   "warning",
   "error",
   "surprised",
-  "angry",
-  "love",
   "sigh",
-  "eureka",
-  "laugh",
   "yawn",
 ] as const;
 
@@ -150,12 +146,6 @@ function bob(amplitude: number) {
   });
 }
 
-function spring(amount: number) {
-  return (t: number): Keyframe => ({
-    transform: `translateY(${(amount * (1 - Math.exp(-5.2 * t) * Math.cos(8.6 * t))).toFixed(2)}px)`,
-  });
-}
-
 function sweep(t: number): number {
   const points: [number, number][] = [
     [0, 0],
@@ -171,26 +161,6 @@ function sweep(t: number): number {
   const [toAt, to] = points[index] as [number, number];
   const local = (t - fromAt) / (toAt - fromAt);
   return from + (to - from) * local * local * (3 - 2 * local);
-}
-
-const HEART = { rx: 7.5, ry: 11.5, tilt: 42, cross: 0.48 };
-
-export function heartPose(side: -1 | 1, { gap, h, w }: EyeSize): string {
-  const inward = -side * (gap + HEART.rx * HEART.cross);
-  return `translateX(${inward.toFixed(2)}px) rotate(${side * HEART.tilt}deg) scale(${(HEART.rx / w).toFixed(3)}, ${(HEART.ry / h).toFixed(3)})`;
-}
-
-function beats(from: number, beat: number, count: number): Keyframe[] {
-  return Array.from({ length: count }, (_, index) => {
-    const start = from + index * beat;
-    return [
-      { offset: start, transform: "scale(1)", easing: EASE_SINE },
-      { offset: start + beat * 0.12, transform: "scale(1.155)", easing: EASE_SINE },
-      { offset: start + beat * 0.24, transform: "scale(1)", easing: EASE_SINE },
-      { offset: start + beat * 0.36, transform: "scale(1.093)", easing: EASE_SINE },
-      { offset: start + beat * 0.48, transform: "scale(1)", easing: "linear" },
-    ];
-  }).flat();
 }
 
 export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
@@ -334,33 +304,6 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { ...REST, easing: EASE_OUT },
     ],
   },
-  angry: {
-    mood: { name: "sad" },
-    accessory: {
-      ...stalk(hold("rotate(-20deg)", 0.15, 0.65)),
-      hat: hold("translateY(3px) rotate(-6deg)", 0.15, 0.65),
-      glasses: hold("translateY(3px)", 0.15, 0.65),
-      bowtie: hold("rotate(-14deg)", 0.15, 0.65),
-    },
-    duration: 1480,
-    body: [
-      { transform: "translateY(0)", offset: 0, easing: EASE_HEAD },
-      { transform: "translateY(1.3px)", offset: 0.255, easing: EASE_HEAD },
-      { transform: "translateY(0)", offset: 0.554 },
-      REST,
-    ],
-    eyes: [
-      ...sample(0, 0.46, 10, spring(2)),
-      { transform: "translateY(2px)", offset: 0.662, easing: EASE_OUT },
-      REST,
-    ],
-    lids: [
-      { offset: 0, top: 0, bottom: 0 },
-      { offset: 0.19, top: 0.83, bottom: 0, tilt: -16 },
-      { offset: 0.662, top: 0.83, bottom: 0, tilt: -16, easing: EASE_OUT },
-      { offset: 1 },
-    ],
-  },
   warning: {
     duration: 3327,
     body: [
@@ -406,35 +349,6 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { offset: 1 },
     ],
   },
-  love: {
-    mood: { name: "happy" },
-    accessory: {
-      ...stalk(hold("rotate(-10deg)", 0.1, 0.85)),
-      hat: hold("translateY(-2px)", 0.1, 0.85),
-      glasses: hold("translateY(-6px)", 0.05, 0.9),
-      bowtie: hold("scale(1.2)", 0.1, 0.85),
-    },
-    prep: 280,
-    duration: 2880,
-    body: [
-      { transform: "translateY(0) rotate(0deg)", offset: 0, easing: "cubic-bezier(.38,0,.25,1)" },
-      { transform: "translateY(-1px)", offset: 0.3, easing: "cubic-bezier(.35,0,.22,1)" },
-      { transform: "translateY(-0.5px)", offset: 0.68, easing: "cubic-bezier(.35,0,.22,1)" },
-      REST,
-    ],
-    eyes: [{ transform: "scale(1)", offset: 0 }, ...beats(240 / 2880, 760 / 2880, 3), REST],
-    eye: (side, size) => [
-      { transform: "none", offset: 0, easing: EASE_SINE },
-      { transform: heartPose(side, size), offset: 240 / 2880 },
-      { transform: heartPose(side, size), offset: 2520 / 2880, easing: EASE_SINE },
-      REST,
-    ],
-    lids: [
-      { offset: 0, top: 0, bottom: 0 },
-      { offset: 2520 / 2880, top: 0, bottom: 0 },
-      { offset: 1 },
-    ],
-  },
   sigh: {
     mood: {
       name: "o",
@@ -474,77 +388,6 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       { offset: 0.3, top: 0.2, bottom: 0, easing: EASE_SINK },
       { offset: 0.5, top: 0.65, bottom: 0 },
       { offset: 0.78, top: 0.65, bottom: 0, easing: EASE_OUT },
-      { offset: 1 },
-    ],
-  },
-  eureka: {
-    mood: {
-      name: "o",
-      frames: [
-        { opacity: 1, transform: "scale(1.2)", offset: 0.12 },
-        { opacity: 1, transform: "scale(1.2)", offset: 0.4 },
-        { opacity: 0, offset: 0.55 },
-      ],
-      rest: [
-        { opacity: 0, offset: 0.12 },
-        { opacity: 0, offset: 0.5 },
-      ],
-    },
-    accessory: {
-      antenna: [
-        { transform: "scaleY(1.45)", offset: 0.15 },
-        { transform: "scaleY(.9)", offset: 0.4 },
-        { transform: "scaleY(1)", offset: 0.6 },
-      ],
-      sprout: hold("scale(1.4)", 0.12, 0.6),
-      hat: [
-        { transform: "translateY(-9px) rotate(-6deg)", offset: 0.18 },
-        { transform: "translateY(0)", offset: 0.45 },
-      ],
-      glasses: hold("translateY(-4px)", 0.12, 0.5),
-      bowtie: hold("scale(1.35)", 0.12, 0.5),
-    },
-    prep: 200,
-    duration: 1400,
-    body: [
-      { transform: "translateY(0) scale(1)", offset: 0, easing: EASE_OUT },
-      { transform: "translateY(-7px) scale(.97,1.05)", offset: 0.18, easing: EASE_SINE },
-      { transform: "translateY(0) scale(1.05,.95)", offset: 0.38, easing: EASE_OUT },
-      { transform: "translateY(0) scale(1)", offset: 0.55 },
-      REST,
-    ],
-    eyes: [
-      { transform: "scale(1)", offset: 0, easing: EASE_OUT },
-      { transform: "scale(1.38)", offset: 0.14 },
-      { transform: "scale(1.38)", offset: 0.5, easing: EASE_OUT },
-      REST,
-    ],
-  },
-  laugh: {
-    mood: {
-      name: "happy",
-      frames: sample(0.08, 0.82, 12, (t) => ({
-        opacity: 1,
-        transform: `scale(${(1.1 + 0.12 * Math.abs(Math.sin(t * Math.PI * 5))).toFixed(3)})`,
-      })),
-    },
-    accessory: {
-      ...stalk([
-        { transform: "rotate(-14deg)", offset: 0.2 },
-        { transform: "rotate(14deg)", offset: 0.45 },
-        { transform: "rotate(-8deg)", offset: 0.7 },
-      ]),
-      hat: hold("translateY(-3px) rotate(-6deg)", 0.1, 0.8),
-      glasses: hold("translateY(-2px)", 0.1, 0.8),
-      bowtie: hold("scale(1.25)", 0.1, 0.8),
-    },
-    duration: 1700,
-    body: [...sample(0.06, 0.86, 20, bob(2.6)), REST],
-    eyes: [...sample(0.06, 0.86, 20, bob(1.2)), REST],
-    lids: [
-      { offset: 0, top: 0, bottom: 0 },
-      { offset: 0.08, top: 0.25, bottom: 1 },
-      { offset: 0.84, top: 0.25, bottom: 1, easing: EASE_OUT },
       { offset: 1 },
     ],
   },

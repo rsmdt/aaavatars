@@ -71,13 +71,10 @@ export const EXPRESSIONS = [
   "happy",
   "sad",
   "angry",
-  "surprised",
   "confused",
-  "love",
-  "focused",
-  "tired",
-  "frustrated",
   "curious",
+  "tired",
+  "love",
 ] as const;
 
 export const GAZES = ["follow", "ponder", "scan", "read", "wander", "ahead", "down", "away"] as const;
@@ -109,12 +106,8 @@ export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: G
   success: { expression: "happy", gaze: "ahead" },
   warning: { expression: "neutral", gaze: "ahead" },
   error: { expression: "neutral", gaze: "ahead" },
-  surprised: { expression: "surprised", gaze: "ahead" },
-  angry: { expression: "angry", gaze: "ahead" },
-  love: { expression: "love", gaze: "ahead" },
+  surprised: { expression: "neutral", gaze: "ahead" },
   sigh: { expression: "tired", gaze: "ahead" },
-  eureka: { expression: "surprised", gaze: "ahead" },
-  laugh: { expression: "happy", gaze: "ahead" },
   yawn: { expression: "tired", gaze: "ahead" },
 };
 
@@ -253,7 +246,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     name,
     onChange,
     renderMouth,
-    shading = 0.6,
+    shading = 0,
     shape,
     size = 64,
     src,

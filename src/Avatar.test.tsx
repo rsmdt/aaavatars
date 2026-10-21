@@ -3,7 +3,7 @@ import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AVATAR_EVENTS } from "./animations.js";
-import { Avatar, type AvatarHandle } from "./Avatar.js";
+import { Avatar, type AvatarHandle, EXPRESSIONS } from "./Avatar.js";
 import { AVATAR_CSS } from "./styles.js";
 
 function stubMatchMedia(reduced: boolean) {
@@ -127,7 +127,7 @@ describe("Avatar", () => {
     const shape = () => container.querySelector(".aaa-eye-l")!.getAttribute("data-shape");
     let playing!: Promise<void>;
     act(() => {
-      playing = ref.current!.play("love");
+      playing = ref.current!.play("success");
     });
     expect(shape()).toBe("eye");
     await act(async () => {
@@ -289,8 +289,8 @@ describe("Avatar", () => {
     const { finishAll } = stubAnimate();
     const ref = createRef<AvatarHandle>();
     const { container } = render(<Avatar ref={ref} name="a" />);
-    const playing = ref.current!.play("angry");
-    expect(container.querySelector("svg")!.dataset.reacting).toBe("angry");
+    const playing = ref.current!.play("warning");
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("warning");
     expect(AVATAR_CSS).toContain(".aaa[data-reacting] .aaa-gaze,.aaa[data-reacting] .aaa-blink,.aaa[data-reacting] .aaa-eye{animation:none}");
     await act(async () => {
       finishAll();
@@ -302,12 +302,12 @@ describe("Avatar", () => {
     );
   });
 
-  it("leans each eye into the heart while playing love", () => {
+  it("moves each eye on its own during a warning", () => {
     stubMatchMedia(false);
     const { animate } = stubAnimate();
     const ref = createRef<AvatarHandle>();
     render(<Avatar ref={ref} name="a" />);
-    void ref.current!.play("love");
+    void ref.current!.play("warning");
     const eyes = animate.mock.contexts.filter((element) =>
       (element as Element).classList.contains("aaa-eye"),
     );
@@ -673,7 +673,7 @@ describe("Avatar", () => {
   });
 
   it("gives every new work feeling its own lids", () => {
-    for (const expression of ["focused", "tired", "frustrated", "curious"] as const) {
+    for (const expression of ["tired", "curious"] as const) {
       const { container, unmount } = render(<Avatar expression={expression} name="a" />);
       expect(container.querySelector("svg")!.dataset.expression).toBe(expression);
       expect(AVATAR_CSS).toContain(`.aaa[data-expression=${expression}]`);
@@ -700,7 +700,7 @@ describe("Avatar", () => {
     const { animate, finishAll } = stubAnimate();
     const ref = createRef<AvatarHandle>();
     render(<Avatar ref={ref} name="a" />);
-    for (const event of ["sigh", "eureka", "laugh", "yawn"] as const) {
+    for (const event of ["sigh", "yawn"] as const) {
       expect(AVATAR_EVENTS).toContain(event);
       animate.mockClear();
       let played!: Promise<void>;
@@ -715,15 +715,26 @@ describe("Avatar", () => {
     }
   });
 
-  it("shades the head like soft clay by default, with a sheen that rides the gaze", () => {
+  it("draws flat by default and shades like soft clay when asked, with a sheen that rides the gaze", () => {
     const { container, rerender } = render(<Avatar name="a" />);
+    expect(container.querySelector(".aaa-rim")).toBeNull();
+    expect(container.querySelector(".aaa-sheen")).toBeNull();
+    expect(container.querySelector(".aaa-shadow")).toBeNull();
+    rerender(<Avatar name="a" shading={0.6} />);
     expect(container.querySelector(".aaa-rim")).not.toBeNull();
     expect(container.querySelector(".aaa-gaze > .aaa-sheen")).not.toBeNull();
     expect(container.querySelector(".aaa-head > .aaa-shadow")).not.toBeNull();
     expect(container.querySelector(".aaa-body-motion .aaa-shadow")).toBeNull();
-    rerender(<Avatar name="a" shading={0} />);
-    expect(container.querySelector(".aaa-rim")).toBeNull();
-    expect(container.querySelector(".aaa-sheen")).toBeNull();
-    expect(container.querySelector(".aaa-shadow")).toBeNull();
+  });
+
+  it("keeps each layer's values distinct", () => {
+    expect([...AVATAR_EVENTS]).toEqual(["acknowledge", "handoff", "success", "warning", "error", "surprised", "sigh", "yawn"]);
+    expect([...EXPRESSIONS]).toEqual(["neutral", "happy", "sad", "angry", "confused", "curious", "tired", "love"]);
+    expect([...EXPRESSIONS].filter((name) => (AVATAR_EVENTS as readonly string[]).includes(name))).toEqual([]);
+  });
+
+  it("widens both eyes when curious, unlike asking's one wider eye", () => {
+    expect(AVATAR_CSS).toContain(".aaa[data-expression=curious] .aaa-eyes-motion{transform:scale(1.12)}");
+    expect(AVATAR_CSS).not.toContain(".aaa[data-expression=curious] .aaa-eye-l");
   });
 });

@@ -27,7 +27,7 @@ await avatar.current?.play("success");
 | `name` | seed string |
 | `frame` | `false` (no background), `0` (square) to `0.5` (circle) |
 | `activity` | `idle`, `thinking`, `working`, `reading`, `searching`, `reviewing`, `coding`, `writing`, `waiting`, `asking`, `listening`, `speaking`, `stuck`, `sleeping` |
-| `expression` | `neutral`, `happy`, `sad`, `angry`, `surprised`, `confused`, `love`, `focused`, `tired`, `frustrated`, `curious` |
+| `expression` | `neutral`, `happy`, `sad`, `angry`, `confused`, `curious`, `tired`, `love` |
 | `gaze` | `follow` (pointer), `ponder`, `scan`, `read`, `wander`, `ahead`, `down`, `away`; defaults per activity |
 | `shape` | `circle`, `squircle`, `pill`, `hex`, `triangle`, `drop`, `cloud`, `blob` |
 | `eyes` | `round`, `dot`, `tall`, `wide` |
@@ -35,7 +35,7 @@ await avatar.current?.play("success");
 | `accessory` | `none`, `antenna`, `sprout`, `hat`, `glasses`, `bowtie` |
 | `content` | `face` or `initial` |
 | `colors` / `body` / `background` | palette to pick from, or explicit hex colours |
-| `fill` / `shading` | `solid` or `gradient`; soft-clay depth from `0` (flat) to `1`, default `0.6` |
+| `fill` / `shading` | `solid` or `gradient`; soft-clay depth from `0` (flat, the default) to `1` |
 | `src` | image URL, falls back to the character when it fails to load |
 | `badge` | node pinned to the bottom-right corner |
 | `label` | tooltip and accessible description of the current action |
@@ -45,7 +45,7 @@ await avatar.current?.play("success");
 
 Unset `shape`, `eyes` and colours come from the name. `mouth` and `accessory` stay off until you set them.
 
-The head is shaded like soft clay: a darker rim, a sheen that rolls with the gaze, and a soft contact shadow that stays put while the body bobs. `shading={0}` draws it flat.
+With `shading` above `0`, the head is shaded like soft clay: a darker rim, a sheen that rolls with the gaze, and a soft contact shadow that stays put while the body bobs.
 
 ## Layers
 
@@ -92,7 +92,7 @@ An activity is the body language of a task. It is not a combination of an expres
 
 ### Expression
 
-An expression is a lasting emotion, shown through the lids and, when set, the mouth.
+An expression is a mood that can last for minutes, shown through the lids and, when set, the mouth. A feeling that only makes sense for a moment, like surprise, is an event instead, so no value belongs to both layers.
 
 | Expression | Eyes |
 |---|---|
@@ -100,13 +100,10 @@ An expression is a lasting emotion, shown through the lids and, when set, the mo
 | `happy` | bottom lids raised |
 | `sad` | top lids down, tilted outward |
 | `angry` | top lids down, tilted inward |
-| `surprised` | wide |
 | `confused` | one lid lowered |
 | `love` | both eyes tilt together into one beating heart |
-| `focused` | top lids lowered and level, bottom lids slightly raised |
 | `tired` | heavy top lids, drooping outward |
-| `frustrated` | top lids pressed inward, bottom lids squeezed up, eyes flattened |
-| `curious` | one eye wider, the other lid slightly lowered |
+| `curious` | both eyes slightly wider |
 
 ### Gaze
 
@@ -137,11 +134,7 @@ An event does not change the `activity`, `expression` or `gaze` props. `EVENT_LA
 | `warning` | a wince: the eyes shift aside, heavy lids press down twice, the head dips and rises |
 | `error` | the eyes morph into `x x` crosses, then the head and eyes sink, hold, and recover |
 | `surprised` | a squint, then wide eyes with a tremble |
-| `angry` | inward lids, the eyes drop on a spring, the head dips |
-| `love` | the eyes tilt into one heart that beats three times |
 | `sigh` | a small breath in, then the lids sink and the head slumps before it recovers |
-| `eureka` | a jump up with eyes popping wide, then a squash back down |
-| `laugh` | happy squeezed eyes and quick little bounces |
 | `yawn` | the head stretches tall while the eyes close, then a blink awake |
 
 Under `prefers-reduced-motion`, or while the page is hidden, `play()` resolves immediately.

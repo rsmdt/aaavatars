@@ -1,8 +1,8 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
-import { type Activity, Avatar, type AvatarHandle } from "../src/index.js";
+import { Avatar, type AvatarHandle } from "../src/index.js";
 import { QUOTES, TASK_STEPS, WORKERS } from "./copy.js";
-import { BUTTON, CARD, DARK_BUTTON, SectionTitle } from "./ui.js";
+import { CARD, SectionTitle } from "./ui.js";
 
 const TASK_STEP_MS = 2600;
 
@@ -144,72 +144,6 @@ function Workers() {
   );
 }
 
-function AccessRequest() {
-  const avatar = useRef<AvatarHandle>(null);
-  const [activity, setActivity] = useState<Activity>("asking");
-  const [reply, setReply] = useState<string | null>(null);
-
-  async function answer(allowed: boolean) {
-    setActivity("idle");
-    setReply(allowed ? "Thanks. Reading the next 14 days only." : "No problem. I'll ask again when it matters.");
-    await avatar.current?.play(allowed ? "success" : "acknowledge");
-  }
-
-  return (
-    <div>
-      <div className="flex items-start gap-4">
-        <Avatar ref={avatar} activity={activity} name="Scheduler" size={72} />
-        <div className="rounded-2xl border border-line bg-white px-4 py-3 text-[15px]">
-          {reply ?? "I can find a time for Friday's review. Mind if I look at your calendar?"}
-        </div>
-      </div>
-      <div className="mt-4 divide-y divide-line rounded-2xl border border-line bg-white">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div>
-            <div className="font-semibold">Calendar</div>
-            <div className="text-sm text-subtle">Read events for the next 14 days. Nothing else.</div>
-          </div>
-          <span className="ml-auto rounded-full border border-[#e3c9bf] bg-[#f7ece7] px-2 py-0.5 font-mono text-[11px] text-[#9a4a2c]">
-            requested
-          </span>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-3 text-subtle">
-          <div>
-            <div className="font-semibold">Mail, messages, contacts</div>
-            <div className="text-sm">Not needed for this task.</div>
-          </div>
-          <span className="ml-auto rounded-full border border-line px-2 py-0.5 font-mono text-[11px]">
-            not requested
-          </span>
-        </div>
-      </div>
-      <div className="mt-4 flex gap-2">
-        {reply ? (
-          <button
-            className={BUTTON}
-            type="button"
-            onClick={() => {
-              setReply(null);
-              setActivity("asking");
-            }}
-          >
-            Ask again
-          </button>
-        ) : (
-          <>
-            <button className={DARK_BUTTON} type="button" onClick={() => void answer(true)}>
-              Allow calendar
-            </button>
-            <button className={BUTTON} type="button" onClick={() => void answer(false)}>
-              Not now
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function WhyAFace() {
   return (
     <section>
@@ -247,14 +181,6 @@ export function WhyAFace() {
         title="One face per worker."
       >
         <Workers />
-      </Story>
-      <Story
-        code={`activity="asking" → play("success") or play("acknowledge")`}
-        index={4}
-        text="Agents become useful once they can see your calendar, inbox and accounts. A persona that asks plainly, says why, and takes no for an answer makes that step feel less like a leap."
-        title="Asking for access, kindly."
-      >
-        <AccessRequest />
       </Story>
     </section>
   );

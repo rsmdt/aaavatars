@@ -20,17 +20,20 @@ export const PLAYING_RING =
 
 export function Pill({
   children,
+  playing = false,
   pressed,
   onClick,
 }: {
   children: ReactNode;
+  playing?: boolean;
   pressed: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       aria-pressed={pressed}
-      className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 font-mono text-[13px] text-chip-ink hover:bg-chip aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white"
+      className={`cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 font-mono text-[13px] text-chip-ink hover:bg-chip aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white ${PLAYING_RING}`}
+      data-playing={playing || undefined}
       type="button"
       onClick={onClick}
     >
@@ -42,18 +45,25 @@ export function Pill({
 export function Pills<T>({
   label,
   options,
+  playing = false,
   value,
   onChange,
 }: {
   label: (option: T) => string;
   options: readonly T[];
+  playing?: boolean;
   value: T;
   onChange: (option: T) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => (
-        <Pill key={label(option)} pressed={option === value} onClick={() => onChange(option)}>
+        <Pill
+          key={label(option)}
+          playing={playing && option === value}
+          pressed={option === value}
+          onClick={() => onChange(option)}
+        >
           {label(option)}
         </Pill>
       ))}

@@ -134,10 +134,8 @@ export const AVATAR_CSS = `
 .aaa:not([data-expression=neutral]) .aaa-mouth-rest{opacity:0}
 .aaa:is([data-expression=happy],[data-expression=love]) .aaa-mood-happy{opacity:1}
 .aaa:is([data-expression=sad],[data-expression=angry]) .aaa-mood-sad{opacity:1}
-.aaa[data-expression=surprised] .aaa-mood-o{opacity:1}
 .aaa[data-expression=confused] .aaa-mood-small{opacity:1}
-.aaa:is([data-expression=focused],[data-expression=tired]) .aaa-mood-flat{opacity:1}
-.aaa[data-expression=frustrated] .aaa-mood-sad{opacity:1;transform:scaleX(.7)}
+.aaa[data-expression=tired] .aaa-mood-flat{opacity:1}
 .aaa[data-expression=curious] .aaa-mood-o{opacity:1;transform:scale(.6)}
 .aaa:not([data-expression=neutral]) .aaa-lid{transform:none}
 .aaa:not([data-expression=neutral]) .aaa-eye{animation:none}
@@ -147,23 +145,14 @@ export const AVATAR_CSS = `
 .aaa[data-expression=angry] .aaa-lid-top.aaa-lid-l{transform:${lid(".83")} rotate(16deg)}
 .aaa[data-expression=angry] .aaa-lid-top.aaa-lid-r{transform:${lid(".83")} rotate(-16deg)}
 .aaa[data-expression=confused] .aaa-lid-top.aaa-lid-r{transform:${lid(".55")} rotate(-8deg)}
-.aaa[data-expression=surprised] .aaa-eyes-motion{transform:scale(1.26)}
-.aaa[data-expression=love] .aaa-eye,.aaa[data-reacting=love] .aaa-eye{transform-origin:50% 100%}
+.aaa[data-expression=love] .aaa-eye{transform-origin:50% 100%}
 .aaa[data-expression=love] .aaa-eye-l{transform:${HEART(-1)}}
 .aaa[data-expression=love] .aaa-eye-r{transform:${HEART(1)}}
 .aaa[data-expression=love] .aaa-eyes-react{animation:aaa-heartbeat 1.52s infinite}
-.aaa[data-expression=focused] .aaa-lid-top{transform:${lid(".42")}}
-.aaa[data-expression=focused] .aaa-lid-bottom{transform:${lid("-.22")}}
 .aaa[data-expression=tired] .aaa-lid-top.aaa-lid-l{transform:${lid(".6")} rotate(-7deg)}
 .aaa[data-expression=tired] .aaa-lid-top.aaa-lid-r{transform:${lid(".6")} rotate(7deg)}
 .aaa[data-expression=tired] .aaa-lid-bottom{transform:${lid("-.12")}}
-.aaa[data-expression=frustrated] .aaa-lid-top.aaa-lid-l{transform:${lid(".5")} rotate(9deg)}
-.aaa[data-expression=frustrated] .aaa-lid-top.aaa-lid-r{transform:${lid(".5")} rotate(-9deg)}
-.aaa[data-expression=frustrated] .aaa-lid-bottom{transform:${lid("-.45")}}
-.aaa[data-expression=frustrated] .aaa-eyes-motion{transform:scale(1.08,.92)}
-.aaa[data-expression=curious] .aaa-eye-l{transform:scale(1.2)}
-.aaa[data-expression=curious] .aaa-eye-r{transform:scale(1.04)}
-.aaa[data-expression=curious] .aaa-lid-top.aaa-lid-r{transform:${lid(".28")} rotate(-6deg)}
+.aaa[data-expression=curious] .aaa-eyes-motion{transform:scale(1.12)}
 .aaa[data-reacting] .aaa-gaze,.aaa[data-reacting] .aaa-blink,.aaa[data-reacting] .aaa-eye{animation:none}
 .aaa[data-reacting] .aaa-look{--aaa-look-x:0px;--aaa-look-y:0px;--aaa-look-sx:1}
 .aaa[data-reacting] .aaa-head{--aaa-head-x:0px;--aaa-head-y:0px;--aaa-head-r:0deg}
