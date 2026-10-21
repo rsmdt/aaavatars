@@ -6,7 +6,6 @@ import {
   type Eyes,
   type Fill,
   type Mouth,
-  type MouthSlot,
   type Shape,
 } from "../src/index.js";
 
@@ -53,6 +52,12 @@ export function randomAgentName(current: string): string {
   return name === current ? randomAgentName(current) : name;
 }
 
+export function randomTeam(size: number): string[] {
+  const names = new Set<string>();
+  while (names.size < size) names.add(randomAgentName(""));
+  return [...names];
+}
+
 export const PALETTES = [
   DEFAULT_COLORS,
   ["#0B132B", "#1C2541", "#3A506B", "#5BC0BE", "#F2F4F3"],
@@ -76,7 +81,7 @@ export interface Look {
   radius: number;
   shading: number;
   shape?: Shape;
-  spinner: boolean;
+  team: string[];
 }
 
 export const DEFAULT_LOOK: Look = {
@@ -88,31 +93,18 @@ export const DEFAULT_LOOK: Look = {
   motion: true,
   name: "Chief of Staff",
   palette: 0,
-  radius: 0.5,
+  radius: 0.2,
   shading: 0,
-  spinner: false,
+  team: [
+    "Chief of Staff",
+    "Research",
+    "Weekly Email Brief",
+    "Inbox Assistant",
+    "Random Writer",
+    "Da Architect",
+    "Existential Q&A",
+  ],
 };
-
-function SpinnerMouth({ color, x, y }: MouthSlot) {
-  return (
-    <path
-      d={`M${x - 6} ${y}A6 6 0 1 1 ${x} ${y + 6}`}
-      fill="none"
-      stroke={color}
-      strokeLinecap="round"
-      strokeWidth={4}
-    >
-      <animateTransform
-        attributeName="transform"
-        dur="0.8s"
-        from={`0 ${x} ${y}`}
-        repeatCount="indefinite"
-        to={`360 ${x} ${y}`}
-        type="rotate"
-      />
-    </path>
-  );
-}
 
 export function lookProps(look: Look) {
   return {
@@ -140,6 +132,5 @@ export function liveProps(look: Look) {
       </span>
     ) : undefined,
     interactive: look.interactive,
-    renderMouth: look.spinner ? SpinnerMouth : undefined,
   } satisfies AvatarProps;
 }

@@ -15,25 +15,25 @@ export const FIELD =
 export const CODE_BLOCK =
   "overflow-x-auto rounded-2xl bg-ink p-5 font-mono text-[13px] leading-relaxed whitespace-pre text-[#e9eaec]";
 
+export const SLIDER =
+  "inline-flex items-center gap-2 rounded-full border border-line bg-white px-3.5 py-1.5 text-[13px] text-subtle";
+
 export const PLAYING_RING =
   "data-playing:ring-2 data-playing:ring-[#b5603f] data-playing:ring-offset-2 data-playing:ring-offset-canvas";
 
 export function Pill({
   children,
-  playing = false,
   pressed,
   onClick,
 }: {
   children: ReactNode;
-  playing?: boolean;
   pressed: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       aria-pressed={pressed}
-      className={`cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 font-mono text-[13px] text-chip-ink hover:bg-chip aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white ${PLAYING_RING}`}
-      data-playing={playing || undefined}
+      className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 font-mono text-[13px] text-chip-ink hover:bg-chip aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white"
       type="button"
       onClick={onClick}
     >
@@ -45,13 +45,11 @@ export function Pill({
 export function Pills<T>({
   label,
   options,
-  playing = false,
   value,
   onChange,
 }: {
   label: (option: T) => string;
   options: readonly T[];
-  playing?: boolean;
   value: T;
   onChange: (option: T) => void;
 }) {
@@ -60,7 +58,6 @@ export function Pills<T>({
       {options.map((option) => (
         <Pill
           key={label(option)}
-          playing={playing && option === value}
           pressed={option === value}
           onClick={() => onChange(option)}
         >
@@ -123,21 +120,18 @@ export function Select<T extends string>({
   emptyLabel,
   label,
   options,
-  playing = false,
   value,
   onChange,
 }: {
   emptyLabel?: string;
   label: string;
   options: readonly T[];
-  playing?: boolean;
   value: T | undefined;
   onChange: (value: T | undefined) => void;
 }) {
   return (
     <label
-      className={`inline-flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-2 pl-3.5 text-[13px] text-subtle ${PLAYING_RING}`}
-      data-playing={playing || undefined}
+      className="inline-flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-2 pl-3.5 text-[13px] text-subtle"
     >
       {label}
       <select

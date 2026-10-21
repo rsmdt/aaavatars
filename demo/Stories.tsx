@@ -147,16 +147,6 @@ function Workers() {
 export function WhyAFace() {
   return (
     <section>
-      <SectionTitle
-        aside="Persistent agents run for hours, across your apps, on computers you never see. A small, readable face is how people learn to trust them."
-        eyebrow="Why a face"
-        title={
-          <>
-            Agents work while you're away.
-            <br />A face keeps them close.
-          </>
-        }
-      />
       <Story
         code={`activity="reading" expression="happy"`}
         index={1}

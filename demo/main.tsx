@@ -2,7 +2,6 @@ import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { Avatar } from "../src/index.js";
-import packageJson from "../package.json" with { type: "json" };
 import { Install } from "./Install.js";
 import { DEFAULT_LOOK, type Look } from "./look.js";
 import { Playground } from "./Playground.js";
@@ -20,14 +19,10 @@ function Demo() {
         <header className="flex items-center gap-3">
           <Avatar frame={0.3} name="aaavatars" size={30} />
           <span className="font-semibold">aaavatars</span>
-          <span className="rounded-full border border-line px-2 py-0.5 font-mono text-[11px] text-subtle">
-            demo {packageJson.version}
-          </span>
-          <a
-            className="ml-auto text-sm text-subtle underline-offset-4 hover:text-ink hover:underline"
-            href={REPOSITORY}
-          >
-            GitHub
+          <a aria-label="GitHub" className="ml-auto text-subtle hover:text-ink" href={REPOSITORY}>
+            <svg aria-hidden="true" className="size-6" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
           </a>
         </header>
 
@@ -35,10 +30,6 @@ function Demo() {
           <h1 className="mx-auto max-w-4xl text-5xl leading-[1.02] font-bold tracking-tight sm:text-6xl">
             Give your agent a face people want to meet.
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-subtle">
-            What it's doing, how it feels, where it looks, and what just happened. Each layer changes
-            on its own, and the eyes carry all four, so the face still reads with no mouth at all.
-          </p>
         </div>
 
         <Playground look={look} onLookChange={changeLook} />
@@ -49,7 +40,7 @@ function Demo() {
       <Install />
 
       <footer className="flex flex-wrap gap-4 border-t border-line pt-6 text-sm text-subtle">
-        <span>aaavatars {packageJson.version} · MIT</span>
+        <span>aaavatars · MIT</span>
         <a className="ml-auto hover:text-ink" href={`${REPOSITORY}#readme`}>
           README
         </a>

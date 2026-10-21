@@ -1,35 +1,11 @@
 import { ACCESSORIES, EYES, FILLS, MOUTHS, SHAPES } from "../src/index.js";
-import { type Look, PALETTES, randomAgentName } from "./look.js";
-import { DARK_BUTTON, FIELD, Select, Switch } from "./ui.js";
-
-const SLIDER =
-  "inline-flex items-center gap-2 rounded-full border border-line bg-white px-3.5 py-1.5 text-[13px] text-subtle";
+import { type Look, PALETTES } from "./look.js";
+import { SLIDER, Select, Switch } from "./ui.js";
 
 export function Appearance({ look, onChange }: { look: Look; onChange: (patch: Partial<Look>) => void }) {
-  function shuffle() {
-    onChange({
-      name: randomAgentName(look.name),
-      shape: undefined,
-      eyes: undefined,
-      mouth: undefined,
-      accessory: undefined,
-    });
-  }
-
   return (
     <section className="flex flex-col gap-3 border-t border-line pt-6">
       <h3 className="text-lg font-semibold">Appearance</h3>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          aria-label="Name"
-          className={`${FIELD} min-w-48 flex-1`}
-          value={look.name}
-          onChange={(event) => onChange({ name: event.target.value })}
-        />
-        <button className={DARK_BUTTON} type="button" onClick={shuffle}>
-          Shuffle
-        </button>
-      </div>
       <div className="flex flex-wrap items-center gap-2">
         <Select
           emptyLabel="auto"
@@ -92,31 +68,14 @@ export function Appearance({ look, onChange }: { look: Look; onChange: (patch: P
             className="w-20 accent-knob"
             max={1}
             min={0}
-            step={0.05}
+            step={0.2}
             type="range"
             value={look.shading}
             onChange={(event) => onChange({ shading: Number(event.target.value) })}
           />
         </label>
-        <label className={SLIDER}>
-          Roundness
-          <input
-            aria-label="Frame roundness"
-            className="w-20 accent-knob"
-            disabled={!look.framed}
-            max={0.5}
-            min={0}
-            step={0.01}
-            type="range"
-            value={look.radius}
-            onChange={(event) => onChange({ radius: Number(event.target.value) })}
-          />
-        </label>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Switch checked={look.framed} onChange={(framed) => onChange({ framed })}>
-          Frame
-        </Switch>
         <Switch
           checked={look.content === "initial"}
           onChange={(checked) => onChange({ content: checked ? "initial" : "face" })}
@@ -134,9 +93,6 @@ export function Appearance({ look, onChange }: { look: Look; onChange: (patch: P
         </Switch>
         <Switch checked={look.badge} onChange={(badge) => onChange({ badge })}>
           Badge
-        </Switch>
-        <Switch checked={look.spinner} onChange={(spinner) => onChange({ spinner })}>
-          Spinner mouth
         </Switch>
       </div>
     </section>
