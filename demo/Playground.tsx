@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   ACTIVITIES,
@@ -13,14 +13,25 @@ import {
   GAZES,
   type Gaze,
 } from "../src/index.js";
-import { type Look, liveProps } from "./look.js";
-import { BUTTON, CARD, CopyButton, PLAYING_RING, Pills } from "./ui.js";
+import { Appearance } from "./Appearance.js";
+import { type Look, PALETTES, liveProps } from "./look.js";
+import { BUTTON, CARD, CODE_BLOCK, CopyButton, PLAYING_RING, Pills, Select } from "./ui.js";
 
-function avatarCode(props: Record<string, string | undefined>): string {
-  const attributes = Object.entries(props)
-    .filter(([, value]) => value)
-    .map(([key, value]) => `${key}="${value}"`);
-  return `<Avatar ${attributes.join(" ")} />`;
+type PropValue = boolean | number | readonly string[] | string | undefined;
+
+function avatarSnippet(props: Record<string, PropValue>): string {
+  const attributes = Object.entries(props).flatMap(([key, value]) => {
+    if (value === undefined) return [];
+    if (value === true) return [`  ${key}`];
+    if (typeof value === "string") return [`  ${key}=${JSON.stringify(value)}`];
+    return [`  ${key}={${JSON.stringify(value)}}`];
+  });
+  return `import { Avatar } from "aaavatars";\n\n<Avatar\n${attributes.join("\n")}\n/>`;
+}
+
+function frameProp(look: Look): false | number | undefined {
+  if (!look.framed) return false;
+  return look.radius === 0.5 ? undefined : look.radius;
 }
 
 function isTyping(target: EventTarget | null): boolean {
@@ -35,33 +46,13 @@ function pickRandom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)] as T;
 }
 
-function LayerSection({
-  children,
-  index,
-  lasts,
-  question,
-  title,
+export function Playground({
+  look,
+  onLookChange,
 }: {
-  children: ReactNode;
-  index: number;
-  lasts?: string;
-  question: string;
-  title: string;
+  look: Look;
+  onLookChange: (patch: Partial<Look>) => void;
 }) {
-  return (
-    <section className="border-t border-line py-6 first:border-t-0 first:pt-0">
-      <header className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="font-mono text-xs text-subtle">{String(index).padStart(2, "0")}</span>
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <span className="text-[15px] text-subtle">{question}</span>
-        {lasts ? <span className="ml-auto text-xs text-subtle">{lasts}</span> : null}
-      </header>
-      {children}
-    </section>
-  );
-}
-
-export function Playground({ look }: { look: Look }) {
   const avatar = useRef<AvatarHandle>(null);
   const lastEvent = useRef<AvatarEvent>(AVATAR_EVENTS[0]);
   const [activity, setActivity] = useState<Activity>("idle");
@@ -71,15 +62,23 @@ export function Playground({ look }: { look: Look }) {
   const shown = playing ? EVENT_LAYERS[playing] : null;
 
   const props = liveProps(look);
-  const code = avatarCode({
+  const code = avatarSnippet({
     name: props.name,
-    activity,
+    activity: activity === "idle" ? undefined : activity,
     expression: expression === "neutral" ? undefined : expression,
     gaze,
     shape: look.shape,
     eyes: look.eyes,
     mouth: look.mouth,
     accessory: look.accessory,
+    colors: look.palette === 0 ? undefined : PALETTES[look.palette],
+    fill: look.fill,
+    shading: look.shading || undefined,
+    frame: frameProp(look),
+    content: look.content === "face" ? undefined : look.content,
+    blink: look.blink ? undefined : false,
+    motion: look.motion ? undefined : false,
+    interactive: look.interactive || undefined,
   });
 
   function play(event: AvatarEvent) {
@@ -129,62 +128,45 @@ export function Playground({ look }: { look: Look }) {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-line bg-white py-1.5 pr-1.5 pl-3">
-          <code className="min-w-0 flex-1 font-mono text-[13px] [overflow-wrap:anywhere]">{code}</code>
-          <CopyButton text={code} />
+        <div className="overflow-hidden rounded-2xl bg-ink">
+          <div className="flex items-center justify-between border-b border-white/10 py-2 pr-2 pl-5 font-mono text-xs text-muted">
+            tsx
+            <CopyButton text={code} />
+          </div>
+          <pre className={`${CODE_BLOCK} rounded-none`}>{code}</pre>
         </div>
       </div>
 
-      <div>
-        <LayerSection
-          index={1}
-          question="What is it doing?"
-          title="Activity"
-        >
-          <Pills
-            label={(option) => option}
-            options={ACTIVITIES}
-            value={activity}
-            onChange={setActivity}
-          />
-        </LayerSection>
-        <LayerSection
-          index={2}
-          question="How does it feel?"
-          title="Expression"
-        >
-          <Pills
-            label={(option) => option}
+      <div className="flex flex-col gap-5">
+        <Pills
+          label={(option) => option}
+          options={ACTIVITIES}
+          value={activity}
+          onChange={setActivity}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Select
+            label="Expression"
             options={EXPRESSIONS}
-            playing={(option) => option === shown?.expression}
-            value={expression}
-            onChange={setExpression}
+            playing={shown !== null}
+            value={shown?.expression ?? expression}
+            onChange={(option) => setExpression(option ?? "neutral")}
           />
-        </LayerSection>
-        <LayerSection
-          index={3}
-          question="Where is it looking?"
-          title="Gaze"
-        >
-          <Pills
-            label={(option) => option ?? "auto"}
-            options={[undefined, ...GAZES]}
-            playing={(option) => shown !== null && option === shown.gaze}
-            value={gaze}
+          <Select
+            emptyLabel="auto"
+            label="Gaze"
+            options={GAZES}
+            playing={shown !== null}
+            value={shown?.gaze ?? gaze}
             onChange={setGaze}
           />
-        </LayerSection>
-        <LayerSection
-          index={4}
-          lasts="1–3s, then back to rest"
-          question="What just happened?"
-          title="Event"
-        >
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        </div>
+        <div>
+          <div className="grid grid-cols-3 gap-2">
             {AVATAR_EVENTS.map((event, index) => (
               <button
                 key={event}
-                className={`flex cursor-pointer items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5 font-mono text-[13px] hover:bg-chip active:translate-y-px ${PLAYING_RING}`}
+                className={`flex cursor-pointer items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2 font-mono text-[13px] hover:bg-chip active:translate-y-px ${PLAYING_RING}`}
                 data-playing={playing === event || undefined}
                 type="button"
                 onClick={() => play(event)}
@@ -196,10 +178,11 @@ export function Playground({ look }: { look: Look }) {
               </button>
             ))}
           </div>
-          <p className="mt-3 text-xs text-muted">
-            Keys 1–9 play an event after a half-second settle. Space replays the last one.
+          <p className="mt-2 text-xs text-muted">
+            Keys 1–9 play a reaction. Space replays the last one.
           </p>
-        </LayerSection>
+        </div>
+        <Appearance look={look} onChange={onLookChange} />
       </div>
     </div>
   );

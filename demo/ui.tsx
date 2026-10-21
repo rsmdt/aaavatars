@@ -20,20 +20,17 @@ export const PLAYING_RING =
 
 export function Pill({
   children,
-  playing = false,
   pressed,
   onClick,
 }: {
   children: ReactNode;
-  playing?: boolean;
   pressed: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       aria-pressed={pressed}
-      className={`cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 font-mono text-[13px] text-chip-ink hover:bg-chip aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white ${PLAYING_RING}`}
-      data-playing={playing || undefined}
+      className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 font-mono text-[13px] text-chip-ink hover:bg-chip aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white"
       type="button"
       onClick={onClick}
     >
@@ -45,25 +42,18 @@ export function Pill({
 export function Pills<T>({
   label,
   options,
-  playing,
   value,
   onChange,
 }: {
   label: (option: T) => string;
   options: readonly T[];
-  playing?: (option: T) => boolean;
   value: T;
   onChange: (option: T) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => (
-        <Pill
-          key={label(option)}
-          playing={playing?.(option)}
-          pressed={option === value}
-          onClick={() => onChange(option)}
-        >
+        <Pill key={label(option)} pressed={option === value} onClick={() => onChange(option)}>
           {label(option)}
         </Pill>
       ))}
@@ -115,6 +105,43 @@ export function Switch({
         onChange={(event) => onChange(event.target.checked)}
       />
       <span className="relative h-[18px] w-[30px] rounded-full bg-track transition-colors after:absolute after:top-0.5 after:left-0.5 after:size-3.5 after:rounded-full after:bg-white after:shadow-[0_1px_3px_rgba(0,0,0,0.18)] after:transition-transform peer-checked:bg-knob peer-checked:after:translate-x-3 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-muted" />
+    </label>
+  );
+}
+
+export function Select<T extends string>({
+  emptyLabel,
+  label,
+  options,
+  playing = false,
+  value,
+  onChange,
+}: {
+  emptyLabel?: string;
+  label: string;
+  options: readonly T[];
+  playing?: boolean;
+  value: T | undefined;
+  onChange: (value: T | undefined) => void;
+}) {
+  return (
+    <label
+      className={`inline-flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-2 pl-3.5 text-[13px] text-subtle ${PLAYING_RING}`}
+      data-playing={playing || undefined}
+    >
+      {label}
+      <select
+        className="cursor-pointer bg-transparent font-mono text-ink outline-none"
+        value={value ?? ""}
+        onChange={(event) => onChange((event.target.value || undefined) as T | undefined)}
+      >
+        {emptyLabel ? <option value="">{emptyLabel}</option> : null}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

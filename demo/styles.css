@@ -25,6 +25,6 @@
 
 @layer base {
   body {
-    @apply bg-canvas font-sans text-ink;
+    @apply overflow-x-clip bg-canvas font-sans text-ink;
   }
 }

@@ -10,16 +10,48 @@ import {
   type Shape,
 } from "../src/index.js";
 
-export const NAMES = [
-  "Chief of Staff",
+const AGENT_DOMAINS = [
+  "Inbox",
+  "Billing",
+  "Release",
+  "Support",
+  "Calendar",
+  "Docs",
+  "Onboarding",
+  "Security",
+  "Pricing",
+  "Changelog",
+  "CI",
+  "Hiring",
+  "Sales",
+  "Analytics",
+  "Incident",
   "Research",
-  "Weekly Email Brief",
-  "Inbox Assistant",
-  "Random Writer",
-  "Da Architect",
-  "Existential Q&A",
-  "Define",
 ];
+
+const AGENT_ROLES = [
+  "Assistant",
+  "Reviewer",
+  "Scout",
+  "Triage",
+  "Writer",
+  "Watcher",
+  "Planner",
+  "Analyst",
+  "Concierge",
+  "Captain",
+  "Scribe",
+  "Agent",
+];
+
+function pickOne(items: readonly string[]): string {
+  return items[Math.floor(Math.random() * items.length)] as string;
+}
+
+export function randomAgentName(current: string): string {
+  const name = `${pickOne(AGENT_DOMAINS)} ${pickOne(AGENT_ROLES)}`;
+  return name === current ? randomAgentName(current) : name;
+}
 
 export const PALETTES = [
   DEFAULT_COLORS,
@@ -37,7 +69,6 @@ export interface Look {
   fill?: Fill;
   framed: boolean;
   interactive: boolean;
-  label: string;
   motion: boolean;
   mouth?: Mouth;
   name: string;
@@ -46,7 +77,6 @@ export interface Look {
   shading: number;
   shape?: Shape;
   spinner: boolean;
-  src: string;
 }
 
 export const DEFAULT_LOOK: Look = {
@@ -55,14 +85,12 @@ export const DEFAULT_LOOK: Look = {
   content: "face",
   framed: true,
   interactive: true,
-  label: "",
   motion: true,
-  name: NAMES[0] as string,
+  name: "Chief of Staff",
   palette: 0,
   radius: 0.5,
   shading: 0,
   spinner: false,
-  src: "",
 };
 
 function SpinnerMouth({ color, x, y }: MouthSlot) {
@@ -95,13 +123,11 @@ export function lookProps(look: Look) {
     eyes: look.eyes,
     fill: look.fill,
     frame: look.framed ? look.radius : false,
-    label: look.label || undefined,
     motion: look.motion,
     mouth: look.mouth,
     name: look.name.trim() || "aaavatars",
     shading: look.shading,
     shape: look.shape,
-    src: look.src || undefined,
   } satisfies AvatarProps;
 }
 

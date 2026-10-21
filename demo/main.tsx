@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 
 import { Avatar } from "../src/index.js";
 import packageJson from "../package.json" with { type: "json" };
-import { Builder } from "./Builder.js";
 import { Install } from "./Install.js";
 import { DEFAULT_LOOK, type Look } from "./look.js";
 import { Playground } from "./Playground.js";
@@ -13,6 +12,7 @@ const REPOSITORY = "https://github.com/rsmdt/aaavatars";
 
 function Demo() {
   const [look, setLook] = useState<Look>(DEFAULT_LOOK);
+  const changeLook = (patch: Partial<Look>) => setLook((current) => ({ ...current, ...patch }));
 
   return (
     <div className="mx-auto flex max-w-[1200px] flex-col gap-28 px-6 pt-6 pb-16">
@@ -41,12 +41,11 @@ function Demo() {
           </p>
         </div>
 
-        <Playground look={look} />
+        <Playground look={look} onLookChange={changeLook} />
       </div>
 
       <WhyAFace />
       <LovedByBots />
-      <Builder look={look} onChange={(patch) => setLook((current) => ({ ...current, ...patch }))} />
       <Install />
 
       <footer className="flex flex-wrap gap-4 border-t border-line pt-6 text-sm text-subtle">

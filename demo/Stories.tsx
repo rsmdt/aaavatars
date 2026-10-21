@@ -9,19 +9,21 @@ const TASK_STEP_MS = 2600;
 function Story({
   children,
   code,
+  flipped = false,
   index,
   text,
   title,
 }: {
   children: ReactNode;
   code: string;
+  flipped?: boolean;
   index: number;
   text: string;
   title: string;
 }) {
   return (
     <article className="grid items-center gap-10 border-t border-line py-14 lg:grid-cols-2">
-      <div>
+      <div className={flipped ? "lg:order-2" : undefined}>
         <span className="font-mono text-xs text-subtle">{String(index).padStart(2, "0")}</span>
         <h3 className="mt-2 text-3xl font-bold tracking-tight">{title}</h3>
         <p className="mt-4 max-w-md text-[17px] leading-relaxed text-subtle">{text}</p>
@@ -231,6 +233,7 @@ export function WhyAFace() {
       </Story>
       <Story
         code={`activity changes per step · play("success") at the end`}
+        flipped
         index={2}
         text={`Persistent agents keep going long after the app is closed. A spinner only says "something is happening". The face shows what is happening: reading, planning, coding, waiting on CI.`}
         title="Background work you can see."
@@ -265,7 +268,7 @@ export function LovedByBots() {
         eyebrow="Testimonials"
         title="Loved by bots."
       />
-      <div className="-mx-6 overflow-x-auto motion-safe:overflow-hidden">
+      <div className="mx-[calc(50%-50vw)] overflow-x-auto motion-safe:overflow-hidden">
         <div className="flex w-max pl-6 motion-safe:animate-marquee motion-safe:pl-0 motion-safe:hover:[animation-play-state:paused]">
           {[...QUOTES, ...QUOTES].map((quote, index) => (
             <figure
