@@ -242,7 +242,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     name,
     onChange,
     renderMouth,
-    shading = 0,
+    shading = 0.6,
     shape,
     size = 64,
     src,
@@ -281,6 +281,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const tracksPointer = resolvedGaze === "follow" && !showImage;
   const slot = mouthSlot(geometry, spec.eyeColor);
   const bodyFill = fill === "gradient" ? `url(#${uid}-fill)` : spec.body;
+  const clay = shading > 0;
+  const sheenY = geometry.top + (geometry.bottom - geometry.top) * 0.26;
   const placement = framed
     ? `translate(${50 + spec.offsetX} ${50 + spec.offsetY}) rotate(${spec.rotate}) scale(0.78) translate(-50 -50)`
     : "translate(50 50) scale(0.92) translate(-50 -50)";
@@ -470,12 +472,29 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
             <stop offset="100%" stopColor={shadeHex(spec.body, -0.22)} />
           </linearGradient>
         ) : null}
-        {shading > 0 ? (
-          <radialGradient id={`${uid}-shade`} cx="0.35" cy="0.3" r="0.85">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity={0.55 * shading} />
-            <stop offset="45%" stopColor="#ffffff" stopOpacity={0} />
-            <stop offset="100%" stopColor="#000000" stopOpacity={0.35 * shading} />
-          </radialGradient>
+        {clay ? (
+          <>
+            <clipPath id={`${uid}-body`}>
+              <path d={geometry.path} />
+            </clipPath>
+            <mask id={`${uid}-outside`} maskUnits="userSpaceOnUse" x={-20} y={-20} width={140} height={140}>
+              <rect x={-20} y={-20} width={140} height={140} fill="#fff" />
+              <path d={geometry.path} fill="#000" />
+            </mask>
+            <radialGradient id={`${uid}-rim`} cx="0.5" cy="0.5" fx="0.42" fy="0.36" r="0.5">
+              <stop offset="45%" stopColor="#000000" stopOpacity={0} />
+              <stop offset="80%" stopColor="#000000" stopOpacity={0.1 * shading} />
+              <stop offset="100%" stopColor="#000000" stopOpacity={0.3 * shading} />
+            </radialGradient>
+            <radialGradient id={`${uid}-sheen`}>
+              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.6 * shading} />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+            </radialGradient>
+            <radialGradient id={`${uid}-shadow`}>
+              <stop offset="0%" stopColor="#000000" stopOpacity={0.3 * shading} />
+              <stop offset="100%" stopColor="#000000" stopOpacity={0} />
+            </radialGradient>
+          </>
         ) : null}
       </defs>
       {framed ? (
@@ -497,6 +516,16 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
           <g transform={placement}>
             <g ref={squishRef} className="aaa-squish">
               <g className="aaa-head">
+                {clay ? (
+                  <ellipse
+                    className="aaa-shadow"
+                    cx={50}
+                    cy={geometry.bottom + 5}
+                    fill={`url(#${uid}-shadow)`}
+                    rx={30}
+                    ry={5}
+                  />
+                ) : null}
                 <g className="aaa-body-motion">
                   <g ref={bodyRef} className="aaa-react">
                     {accessoryBehind ? (
@@ -514,14 +543,36 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
                       strokeLinejoin="round"
                       strokeWidth={8}
                     />
-                    {shading > 0 ? (
-                      <path
-                        d={geometry.path}
-                        fill={`url(#${uid}-shade)`}
-                        stroke={`url(#${uid}-shade)`}
-                        strokeLinejoin="round"
-                        strokeWidth={8}
-                      />
+                    {clay ? (
+                      <>
+                        <g className="aaa-rim">
+                          <path d={geometry.path} fill={`url(#${uid}-rim)`} />
+                          <path
+                            d={geometry.path}
+                            fill="none"
+                            mask={`url(#${uid}-outside)`}
+                            stroke="#000000"
+                            strokeLinejoin="round"
+                            strokeOpacity={0.3 * shading}
+                            strokeWidth={8}
+                          />
+                        </g>
+                        <g clipPath={`url(#${uid}-body)`}>
+                          <g className="aaa-look">
+                            <g className="aaa-gaze">
+                              <ellipse
+                                className="aaa-sheen"
+                                cx={39}
+                                cy={sheenY}
+                                fill={`url(#${uid}-sheen)`}
+                                rx={17}
+                                ry={11}
+                                transform={`rotate(-24 39 ${sheenY})`}
+                              />
+                            </g>
+                          </g>
+                        </g>
+                      </>
                     ) : null}
                     <g ref={eyesRef} className="aaa-eyes-react" fill={spec.eyeColor}>
                       <g className="aaa-look">

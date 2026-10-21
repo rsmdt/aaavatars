@@ -352,7 +352,7 @@ describe("Avatar", () => {
   it("renders no background or clip without a frame", () => {
     const { container } = render(<Avatar frame={false} name="a" />);
     expect(container.querySelector("[data-frame]")).toBeNull();
-    expect(container.querySelector("clipPath")).toBeNull();
+    expect(container.querySelector(`clipPath[id$="-frame"]`)).toBeNull();
   });
 
   it("play resolves after both body and eye animations finish", async () => {
@@ -651,5 +651,17 @@ describe("Avatar", () => {
     expect(container.querySelectorAll(".aaa-mood")).toHaveLength(4);
     rerender(<Avatar content="initial" mouth="smile" name="a" />);
     expect(container.querySelector(".aaa-mood")).toBeNull();
+  });
+
+  it("shades the head like soft clay by default, with a sheen that rides the gaze", () => {
+    const { container, rerender } = render(<Avatar name="a" />);
+    expect(container.querySelector(".aaa-rim")).not.toBeNull();
+    expect(container.querySelector(".aaa-gaze > .aaa-sheen")).not.toBeNull();
+    expect(container.querySelector(".aaa-head > .aaa-shadow")).not.toBeNull();
+    expect(container.querySelector(".aaa-body-motion .aaa-shadow")).toBeNull();
+    rerender(<Avatar name="a" shading={0} />);
+    expect(container.querySelector(".aaa-rim")).toBeNull();
+    expect(container.querySelector(".aaa-sheen")).toBeNull();
+    expect(container.querySelector(".aaa-shadow")).toBeNull();
   });
 });

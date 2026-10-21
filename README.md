@@ -35,7 +35,7 @@ await avatar.current?.play("done");
 | `accessory` | `none`, `antenna`, `sprout`, `hat`, `glasses`, `bowtie` |
 | `content` | `face` or `initial` |
 | `colors` / `body` / `background` | palette to pick from, or explicit hex colours |
-| `fill` / `shading` | `solid` or `gradient`; `0` to `1` |
+| `fill` / `shading` | `solid` or `gradient`; soft-clay depth from `0` (flat) to `1`, default `0.6` |
 | `src` | image URL, falls back to the character when it fails to load |
 | `badge` | node pinned to the bottom-right corner |
 | `label` | tooltip and accessible description of the current action |
@@ -44,6 +44,8 @@ await avatar.current?.play("done");
 | `onChange` | called with the event when one starts playing, from `play()` or an interactive reaction, and with `null` when it ends |
 
 Unset `shape`, `eyes` and colours come from the name. `mouth` and `accessory` stay off until you set them.
+
+The head is shaded like soft clay: a darker rim, a sheen that rolls with the gaze, and a soft contact shadow that stays put while the body bobs. `shading={0}` draws it flat.
 
 ## Layers
 
