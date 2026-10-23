@@ -1,9 +1,10 @@
+import { GLYPHS } from "./parts.js";
+
 const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
 const EASE_SPRING = "cubic-bezier(.34,1.56,.64,1)";
 const EASE_SMOOTH = "cubic-bezier(.37,0,.63,1)";
 const EASE_IN = "cubic-bezier(.5,0,.75,0)";
 
-const PENDING = ".aaa[data-activity=busy][data-expression=neutral]:not([data-reacting])";
 
 type Glance = [percent: number, x: number, y: number];
 
@@ -71,25 +72,28 @@ export const AVATAR_CSS = `
 .aaa[data-activity=coding] .aaa-body-motion{animation:aaa-bob ${loop(1.6)}}
 .aaa[data-activity=coding][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=coding][data-expression=neutral] .aaa-eye-r{animation:aaa-caret 1.06s steps(1) .32s infinite}
-.aaa-character,.aaa-face,.aaa-pending-dot,.aaa-pending-pulse{transform-box:fill-box;transform-origin:center}
+.aaa-character,.aaa-face,.aaa-glyph,.aaa-dot,.aaa-dot-pulse{transform-box:fill-box;transform-origin:center}
 .aaa-character{transition:transform .4s ${EASE_SPRING} .2s,opacity .2s .2s}
-.aaa-pending-dot{opacity:0;transform:translateX(calc(var(--aaa-dot)*-20px)) scale(.3);transition:transform .3s ${EASE_IN},opacity .2s .1s}
-${PENDING} .aaa-face{opacity:0;transition:opacity 0s .3s}
-${PENDING} .aaa-character{opacity:0;transform:scale(.2);transition:transform .35s ${EASE_IN},opacity .1s .25s}
-${PENDING} .aaa-pending-dot{opacity:1;transform:none;transition:transform .45s ${EASE_SPRING} .25s,opacity .1s .25s}
-${PENDING} .aaa-pending-pulse{animation:aaa-pending 1.2s ease-in-out calc(.7s + var(--aaa-dot)*.2s) infinite both}
+.aaa-dot{opacity:0;transform:translateX(calc(var(--aaa-dot)*-20px)) scale(.3);transition:transform .3s ${EASE_IN},opacity .2s .1s}
+.aaa[data-glyph] .aaa-face{opacity:0;transition:opacity 0s .3s}
+.aaa[data-glyph] .aaa-character{opacity:0;transform:scale(.2);transition:transform .35s ${EASE_IN},opacity .1s .25s}
+.aaa[data-glyph=dots] .aaa-dot{opacity:1;transform:none;transition:transform .45s ${EASE_SPRING} .25s,opacity .1s .25s}
+.aaa[data-glyph=dots] .aaa-dot-pulse{animation:aaa-pending 1.2s ease-in-out calc(.7s + var(--aaa-dot)*.2s) infinite both}
+.aaa-glyph:not(.aaa-glyph-dots){opacity:0;transform:scale(.3);transition:transform .3s ${EASE_IN},opacity .2s .1s}
+${GLYPHS.filter((glyph) => glyph !== "dots")
+  .map((glyph) => `.aaa[data-glyph=${glyph}] .aaa-glyph-${glyph}{opacity:1;transform:none;transition:transform .45s ${EASE_SPRING} .25s,opacity .1s .25s}`)
+  .join("\n")}
+.aaa-bar{transform-box:fill-box;transform-origin:center}
+.aaa[data-glyph=bars] .aaa-bar{animation:aaa-bar .9s ease-in-out calc(.6s + var(--aaa-bar)*.15s) infinite both}
 .aaa[data-activity=asking] .aaa-body-motion{transform:rotate(-7deg)}
-.aaa[data-activity=asking][data-expression=neutral] .aaa-eye-r{transform:scale(1.25)}
-.aaa[data-activity=stuck] .aaa-body-motion{transform:rotate(-10deg)}
-.aaa[data-activity=stuck][data-expression=neutral] .aaa-blink{animation:none}
+.aaa[data-activity=error] .aaa-body-motion{transform:rotate(-10deg)}
+.aaa[data-activity=error][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=sleeping] .aaa-body-motion{animation:aaa-breathe ${loop(4.2)}}
 .aaa[data-activity=sleeping] .aaa-lid-top{transform:${lid(".85")}}
 .aaa[data-activity=sleeping] .aaa-lid-bottom{transform:${lid("-.85")}}
 .aaa[data-activity=sleeping] .aaa-react{transform:translateY(3px)}
 .aaa[data-activity=sleeping][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=listening] .aaa-body-motion{animation:aaa-nod ${loop(2.8)}}
-.aaa[data-activity=listening][data-expression=neutral] .aaa-eye{animation:aaa-caret 1.06s steps(1) .32s infinite}
-.aaa[data-activity=listening][data-expression=neutral] .aaa-blink{animation:none}
 .aaa[data-activity=reviewing] .aaa-lid-top{transform:${lid(".78")}}
 .aaa[data-activity=reviewing] .aaa-lid-bottom{transform:${lid("-.78")}}
 .aaa[data-activity=reviewing][data-expression=neutral] .aaa-blink{animation:none}
@@ -110,11 +114,11 @@ ${PENDING} .aaa-pending-pulse{animation:aaa-pending 1.2s ease-in-out calc(.7s + 
 .aaa[data-activity=thinking][data-expression=neutral] .aaa-mood-small{opacity:1}
 .aaa[data-activity=thinking] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){animation:aaa-acc-sway 2.4s ease-in-out infinite}
 .aaa[data-activity=thinking] .aaa-accessory[data-accessory=glasses]{animation:aaa-glasses-think 2.4s ease-in-out infinite}
-.aaa[data-activity=stuck][data-expression=neutral] .aaa-mouth-rest{opacity:0}
-.aaa[data-activity=stuck][data-expression=neutral] .aaa-mood-sad{opacity:1}
-.aaa[data-activity=stuck] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){transform:rotate(28deg)}
-.aaa[data-activity=stuck] .aaa-accessory:is([data-accessory=hat],[data-accessory=glasses]){transform:translateY(3px) rotate(8deg)}
-.aaa[data-activity=stuck] .aaa-accessory[data-accessory=bowtie]{transform:rotate(18deg)}
+.aaa[data-activity=error][data-expression=neutral] .aaa-mouth-rest{opacity:0}
+.aaa[data-activity=error][data-expression=neutral] .aaa-mood-sad{opacity:1}
+.aaa[data-activity=error] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){transform:rotate(28deg)}
+.aaa[data-activity=error] .aaa-accessory:is([data-accessory=hat],[data-accessory=glasses]){transform:translateY(3px) rotate(8deg)}
+.aaa[data-activity=error] .aaa-accessory[data-accessory=bowtie]{transform:rotate(18deg)}
 .aaa[data-activity=sleeping][data-expression=neutral] .aaa-mouth-rest{opacity:0}
 .aaa[data-activity=sleeping][data-expression=neutral] .aaa-mood-o{opacity:1;animation:aaa-snore 4.2s ease-in-out infinite}
 .aaa[data-activity=sleeping] .aaa-accessory:is([data-accessory=antenna],[data-accessory=sprout]){transform:rotate(-35deg)}
@@ -274,6 +278,7 @@ ${glances(
 @keyframes aaa-nod{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(-3deg) translateY(1px)}}
 @keyframes aaa-talk{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.4)}}
 @keyframes aaa-pending{0%,60%,100%{opacity:.5;transform:scale(1)}30%{opacity:1;transform:scale(1.3)}}
+@keyframes aaa-bar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
 @keyframes aaa-caret{0%{opacity:1}50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.aaa *{animation:none!important;transition:none!important}}
 `;

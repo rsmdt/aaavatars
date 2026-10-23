@@ -22,7 +22,7 @@ const EYE_HALF_HEIGHT: Record<Eyes, number> = { dot: 7, round: 10, tall: 11, wid
 
 const EYE_HALF_WIDTH: Record<Eyes, number> = { dot: 7, round: 8, tall: 5, wide: 11 };
 
-export type EyePose = "eye" | "prompt" | "cross" | "cursor" | "smile";
+export type EyePose = "eye" | "prompt" | "cross" | "smile";
 
 type Point = [x: number, y: number];
 
@@ -151,7 +151,6 @@ function polygon(vertices: Point[], dx = 0): string {
 export function eyePath(eyes: Eyes, pose: EyePose, side: -1 | 1, gap: number): string {
   if (pose === "cross") return polygon(CROSS);
   if (pose === "smile") return smileArc(7, 7.5, 6.5, 3.5);
-  if (pose === "cursor") return polygon([[-2, -13.5], [2, -13.5], [2, 13.5], [-2, 13.5]], -side * gap);
   if (pose === "prompt" && side === -1) {
     return polygon([[-8, -14], [0, -14], [10, 0], [0, 14], [-8, 14], [2, 0]], gap - 11.5);
   }
@@ -350,4 +349,66 @@ function AccessoryArt({ accessory, accent, body, geometry }: AccessoryProps) {
     );
   }
   return null;
+}
+
+export const GLYPHS = ["dots", "check", "bang", "question", "bars", "slide"] as const;
+
+export type Glyph = (typeof GLYPHS)[number];
+
+const DOTS = [-1, 0, 1];
+
+const BARS: [offset: number, height: number][] = [
+  [-1.5, 14],
+  [-0.5, 28],
+  [0.5, 20],
+  [1.5, 10],
+];
+
+const GLYPH_STROKE = { fill: "none", strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+export function Glyphs({ fill }: { fill: string }) {
+  return (
+    <>
+      <g className="aaa-glyph aaa-glyph-dots">
+        {DOTS.map((offset) => (
+          <g key={offset} className="aaa-dot" style={{ "--aaa-dot": offset } as CSSProperties}>
+            <circle className="aaa-dot-pulse" cx={50 + offset * 20} cy={50} fill={fill} r={7} />
+          </g>
+        ))}
+      </g>
+      <g className="aaa-glyph aaa-glyph-check">
+        <path d="M35 51L45.5 61.5L66 40" stroke={fill} strokeWidth={10} {...GLYPH_STROKE} />
+      </g>
+      <g className="aaa-glyph aaa-glyph-bang" fill={fill}>
+        <rect x={45} y={29} width={10} height={28} rx={5} />
+        <circle cx={50} cy={68} r={5.5} />
+      </g>
+      <g className="aaa-glyph aaa-glyph-question">
+        <path
+          d="M41 40A9.5 9.5 0 1 1 55 48.5C51.5 50.5 50 52.5 50 56"
+          stroke={fill}
+          strokeWidth={9}
+          {...GLYPH_STROKE}
+        />
+        <circle cx={50} cy={68} fill={fill} r={5.5} />
+      </g>
+      <g className="aaa-glyph aaa-glyph-bars" fill={fill}>
+        {BARS.map(([offset, height]) => (
+          <rect
+            key={offset}
+            className="aaa-bar"
+            height={height}
+            rx={3.5}
+            style={{ "--aaa-bar": offset } as CSSProperties}
+            width={7}
+            x={46.5 + offset * 11}
+            y={50 - height / 2}
+          />
+        ))}
+      </g>
+      <g className="aaa-glyph aaa-glyph-slide">
+        <circle cx={50} cy={50} fill={fill} r={8} />
+      </g>
+    </>
+  );
 }

@@ -54,7 +54,7 @@ export const QUOTES: Quote[] = [
   {
     handle: "@voice-desk",
     activity: "listening",
-    text: "One tall cursor and everyone knows it's their turn to talk.",
+    text: "I turn into bouncing sound bars. Everyone knows I'm listening.",
   },
   {
     handle: "@queue-keeper",
@@ -63,7 +63,7 @@ export const QUOTES: Quote[] = [
   },
   {
     handle: "@hotfix",
-    activity: "stuck",
+    activity: "error",
     text: "One sweep, then x x. My stack traces feel seen.",
   },
   {

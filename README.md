@@ -61,16 +61,18 @@ Each layer changes without touching the others. While an event plays it owns the
 |---|---|---|---|
 | `idle` | slow drift | | `follow` |
 | `busy` | turns away, then folds into three pulsing dots, and turns back round when it ends | | `ahead` |
+| `done` | turns away and folds into a check mark | | `ahead` |
+| `attention` | turns away and folds into a `!` | | `ahead` |
 | `thinking` | sway | | `ponder` |
 | `reading` | still | | `read` |
 | `searching` | leans in | dart and hold | `ahead` |
 | `reviewing` | head dips | narrow, look down and up | `ahead` |
 | `coding` | bob | a `>_` prompt with a blinking cursor | `ahead` |
 | `writing` | slow bob | | `read` |
-| `asking` | head tilted | one eye wider | `ahead` |
-| `listening` | nod | one tall blinking cursor | `ahead` |
+| `asking` | turns away and folds into a `?` | | `ahead` |
+| `listening` | turns away and folds into bouncing sound bars | | `ahead` |
 | `speaking` | bob, mouth talks | | `follow` |
-| `stuck` | tilted | sweep, then `x x` | `ahead` |
+| `error` | tilted | sweep, then `x x` | `ahead` |
 | `sleeping` | breathe, sunk | droop and close, whatever the expression | `ahead` |
 
 ### Expression
@@ -101,13 +103,13 @@ Each layer changes without touching the others. While an event plays it owns the
 
 ### Event
 
-`play(event)` resolves when the reaction ends, or immediately under `prefers-reduced-motion`. It does not change the props. `EVENT_LAYERS[event]` names the expression and gaze it shows, for example `success` shows `happy` eyes looking `ahead`.
+`play(event)` resolves when the reaction ends, or immediately under `prefers-reduced-motion`. It does not change the props. `EVENT_LAYERS[event]` names the expression and gaze it shows, for example `sigh` shows `tired` eyes looking `ahead`. `success` and `handoff` turn the avatar into a glyph and resolve once it has turned back.
 
 | Event | Reaction |
 |---|---|
 | `acknowledge` | a double nod |
-| `handoff` | lean to the side and back |
-| `success` | happy eyes with a bounce |
+| `handoff` | folds into a dot that slides out to the right and back in from the left |
+| `success` | folds into a check mark |
 | `warning` | a wince |
 | `error` | `x x` eyes, then sink and recover |
 | `surprised` | a squint, then wide eyes |

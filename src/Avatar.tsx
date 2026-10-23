@@ -7,6 +7,7 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -14,6 +15,7 @@ import {
 
 import {
   type AvatarEvent,
+  ERROR_ANIMATION,
   EVENT_ANIMATIONS,
   type EventAnimation,
   type LidFrame,
@@ -21,7 +23,6 @@ import {
   MOOD_SWAP_SHOW,
   PREP_MS,
   SLEEP_ANIMATION,
-  STUCK_ANIMATION,
   WAKE_ANIMATION,
   type TurnPose,
   featureTurn,
@@ -35,6 +36,8 @@ import {
   AccessoryShape,
   EyePair,
   type EyePose,
+  type Glyph,
+  Glyphs,
   MoodMouths,
   MouthShape,
   type RenderMouth,
@@ -56,6 +59,8 @@ import { watchVisibility } from "./visibility.js";
 export const ACTIVITIES = [
   "idle",
   "busy",
+  "done",
+  "attention",
   "thinking",
   "reading",
   "searching",
@@ -65,7 +70,7 @@ export const ACTIVITIES = [
   "asking",
   "listening",
   "speaking",
-  "stuck",
+  "error",
   "sleeping",
 ] as const;
 
@@ -89,6 +94,8 @@ export type Gaze = (typeof GAZES)[number];
 const ACTIVITY_GAZE: Record<Activity, Gaze> = {
   idle: "follow",
   busy: "ahead",
+  done: "ahead",
+  attention: "ahead",
   thinking: "ponder",
   reading: "read",
   searching: "ahead",
@@ -98,14 +105,14 @@ const ACTIVITY_GAZE: Record<Activity, Gaze> = {
   asking: "ahead",
   listening: "ahead",
   speaking: "follow",
-  stuck: "ahead",
+  error: "ahead",
   sleeping: "ahead",
 };
 
 export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: Gaze }> = {
   acknowledge: { expression: "neutral", gaze: "ahead" },
   handoff: { expression: "neutral", gaze: "ahead" },
-  success: { expression: "happy", gaze: "ahead" },
+  success: { expression: "neutral", gaze: "ahead" },
   warning: { expression: "neutral", gaze: "ahead" },
   error: { expression: "neutral", gaze: "ahead" },
   surprised: { expression: "neutral", gaze: "ahead" },
@@ -115,8 +122,15 @@ export const EVENT_LAYERS: Record<AvatarEvent, { expression: Expression; gaze: G
 
 const ACTIVITY_POSE: Partial<Record<Activity, EyePose>> = {
   coding: "prompt",
-  stuck: "cross",
-  listening: "cursor",
+  error: "cross",
+};
+
+const ACTIVITY_GLYPH: Partial<Record<Activity, Glyph>> = {
+  busy: "dots",
+  done: "check",
+  attention: "bang",
+  asking: "question",
+  listening: "bars",
 };
 
 const EXPRESSION_POSE: Partial<Record<Expression, EyePose>> = {
@@ -160,7 +174,6 @@ export interface AvatarProps {
 const DRAG_THRESHOLD = 3;
 const HOLD_MS = 600;
 const SQUISH_LIMIT = 40;
-const PENDING_DOTS = [-1, 0, 1];
 
 interface DragState {
   held: boolean;
@@ -272,6 +285,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const suppressClick = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [reacting, setReacting] = useState<EyePose | null>(null);
+  const [eventGlyph, setEventGlyph] = useState<Glyph | null>(null);
+  const glyphSettled = useRef<(() => void) | null>(null);
   const latestOnChange = useRef(onChange);
   latestOnChange.current = onChange;
   const latestPlay = useRef(0);
@@ -305,6 +320,10 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     (shownExpression === "neutral"
       ? (ACTIVITY_POSE[activity] ?? "eye")
       : (EXPRESSION_POSE[shownExpression] ?? "eye"));
+  const glyph = showImage
+    ? undefined
+    : (eventGlyph ??
+      (reacting === null && shownExpression === "neutral" ? ACTIVITY_GLYPH[activity] : undefined));
   const tracksPointer = resolvedGaze === "follow" && !showImage;
   const slot = mouthSlot(geometry, spec.eyeColor);
   const bodyFill = fill === "gradient" ? `url(#${uid}-fill)` : spec.body;
@@ -313,6 +332,22 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const placement = framed
     ? `translate(${50 + spec.offsetX} ${50 + spec.offsetY}) rotate(${spec.rotate}) scale(0.78) translate(-50 -50)`
     : "translate(50 50) scale(0.92) translate(-50 -50)";
+
+  const holdGlyph = useCallback(
+    async (glyph: NonNullable<EventAnimation["glyph"]>, duration: number) => {
+      const holder = svgRef.current?.querySelector(`.aaa-glyph-${glyph.shape} > *`);
+      const started = holder ? [holder.animate(glyph.frames ?? [{}, {}], { duration })] : [];
+      running.current = started;
+      await Promise.all(started.map((animation) => animation.finished)).catch(() => undefined);
+      if (running.current !== started) return;
+      await new Promise<void>((resolve) => {
+        glyphSettled.current?.();
+        glyphSettled.current = resolve;
+        setEventGlyph(null);
+      });
+    },
+    [],
+  );
 
   const run = useCallback((name: string, animation: EventAnimation, immediate = false) => {
     for (const animation of running.current) animation.cancel();
@@ -326,6 +361,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     ) {
       return Promise.resolve();
     }
+    setEventGlyph(animation.glyph?.shape ?? null);
+    if (animation.glyph) return holdGlyph(animation.glyph, animation.duration);
     const prep = immediate ? 0 : (animation.prep ?? PREP_MS);
     const timing = { duration: prep + animation.duration, easing: "linear" };
     const root = svgRef.current;
@@ -364,7 +401,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       root.removeAttribute("data-reacting");
       setReacting(null);
     });
-  }, []);
+  }, [holdGlyph]);
 
   const play = useCallback(
     async (event: AvatarEvent, immediate = false) => {
@@ -378,34 +415,47 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
 
   useImperativeHandle(ref, () => ({ play: (event: AvatarEvent) => play(event) }), [play]);
 
+  const previousGlyph = useRef(glyph);
+
+  useLayoutEffect(() => {
+    const previous = previousGlyph.current;
+    previousGlyph.current = glyph;
+    const turned = Boolean(previous) !== Boolean(glyph);
+    if (turned) turning.current = turnFace(glyph ? turnAway : turnBack);
+    const settle = glyphSettled.current;
+    if (!settle || eventGlyph) return;
+    glyphSettled.current = null;
+    if (!turned) return settle();
+    Promise.all(turning.current.map((animation) => animation.finished)).then(settle, settle);
+  }, [glyph, eventGlyph, geometry]);
+
+  function turnFace(turn: typeof turnAway): Animation[] {
+    for (const animation of turning.current) animation.cancel();
+    const face = faceRef.current;
+    if (!face || typeof face.animate !== "function" || prefersReducedMotion()) return [];
+    const gap = geometry.eyeGap;
+    const features = [...face.children].flatMap((child): [Element, TurnPose][] => {
+      const left = child.querySelector(".aaa-eye-l");
+      const right = child.querySelector(".aaa-eye-r");
+      if (left && right) return [[left, featureTurn(gap, -gap)], [right, featureTurn(gap, gap)]];
+      if (child.matches("[data-accessory=glasses]")) return [[child, spanTurn(gap)]];
+      return [[child, featureTurn(gap, 0)]];
+    });
+    return features.map(([feature, pose]) => {
+      const { frames, timing } = turn(pose);
+      return feature.animate(frames, timing);
+    });
+  }
+
   const previousActivity = useRef(activity);
 
   useEffect(() => {
     const previous = previousActivity.current;
     previousActivity.current = activity;
     if (previous === activity) return;
-    if ((activity === "busy" || previous === "busy") && shownExpression === "neutral") {
-      for (const animation of turning.current) animation.cancel();
-      const face = faceRef.current;
-      const gap = geometry.eyeGap;
-      const turn = activity === "busy" ? turnAway : turnBack;
-      if (face && typeof face.animate === "function" && !prefersReducedMotion()) {
-        const features = [...face.children].flatMap((child): [Element, TurnPose][] => {
-          const left = child.querySelector(".aaa-eye-l");
-          const right = child.querySelector(".aaa-eye-r");
-          if (left && right) return [[left, featureTurn(gap, -gap)], [right, featureTurn(gap, gap)]];
-          if (child.matches("[data-accessory=glasses]")) return [[child, spanTurn(gap)]];
-          return [[child, featureTurn(gap, 0)]];
-        });
-        turning.current = features.map(([feature, pose]) => {
-          const { frames, timing } = turn(pose);
-          return feature.animate(frames, timing);
-        });
-      }
-    }
     if (activity === "sleeping") void run("sleep", SLEEP_ANIMATION);
     else if (previous === "sleeping") void run("wake", WAKE_ANIMATION);
-    else if (activity === "stuck") void run("stuck", STUCK_ANIMATION);
+    else if (activity === "error") void run("error", ERROR_ANIMATION);
   }, [activity, play, run]);
 
   useEffect(() => {
@@ -481,6 +531,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
       aria-label={label ? `${name}, ${label}` : name}
       className={className ? `aaa ${className}` : "aaa"}
       data-activity={activity}
+      data-glyph={glyph}
       data-blink={blink ? undefined : "off"}
       data-expression={shownExpression}
       data-gaze={resolvedGaze}
@@ -681,23 +732,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
                 </g>
               </g>
             </g>
-            <g className="aaa-pending">
-              {PENDING_DOTS.map((offset) => (
-                <g
-                  key={offset}
-                  className="aaa-pending-dot"
-                  style={{ "--aaa-dot": offset } as CSSProperties}
-                >
-                  <circle
-                    className="aaa-pending-pulse"
-                    cx={50 + offset * 20}
-                    cy={50}
-                    fill={bodyFill}
-                    r={7}
-                  />
-                </g>
-              ))}
-            </g>
+            <Glyphs fill={bodyFill} />
           </>
         )}
       </g>

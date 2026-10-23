@@ -13,4 +13,8 @@ describe("renderAvatarSvg", () => {
   it("is deterministic for the same name", () => {
     expect(renderAvatarSvg({ name: "Research" })).toBe(renderAvatarSvg({ name: "Research" }));
   });
+
+  it("draws the glyph of a glyph activity", () => {
+    expect(renderAvatarSvg({ activity: "done", name: "Research" })).toContain('data-glyph="check"');
+  });
 });

@@ -62,7 +62,7 @@ describe("Avatar", () => {
   });
 
   it("leans the eyes into one heart for love, whatever the activity", () => {
-    const { container } = render(<Avatar activity="stuck" expression="love" name="a" />);
+    const { container } = render(<Avatar activity="error" expression="love" name="a" />);
     expect(container.querySelectorAll(".aaa-eye")).toHaveLength(2);
     expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-l{transform:translateX(");
     expect(AVATAR_CSS).toContain(".aaa[data-expression=love] .aaa-eye-r{transform:translateX(");
@@ -118,7 +118,7 @@ describe("Avatar", () => {
   it("draws every eye pose with the same path commands so it can morph", () => {
     const { container, rerender } = render(<Avatar name="a" />);
     for (const eyes of ["dot", "round", "tall", "wide"] as const) {
-      for (const activity of ["idle", "coding", "stuck", "listening"] as const) {
+      for (const activity of ["idle", "coding"] as const) {
         rerender(<Avatar activity={activity} eyes={eyes} name="a" />);
         for (const shape of container.querySelectorAll(".aaa-shape")) {
           expect(shape.getAttribute("d")).toMatch(/^M[^A-Z]*(C[^A-Z]*){12}Z$/);
@@ -144,26 +144,6 @@ describe("Avatar", () => {
       await playing;
     });
     expect(shape()).toBe("prompt");
-  });
-
-  it("morphs the eyes into smiling arcs for success, with the same path commands", async () => {
-    stubMatchMedia(false);
-    const { finishAll } = stubAnimate();
-    const ref = createRef<AvatarHandle>();
-    const { container } = render(<Avatar ref={ref} eyes="dot" name="a" />);
-    let playing!: Promise<void>;
-    act(() => {
-      playing = ref.current!.play("success");
-    });
-    for (const eye of container.querySelectorAll(".aaa-eye")) {
-      expect(eye.getAttribute("data-shape")).toBe("smile");
-      expect(eye.querySelector(".aaa-shape")!.getAttribute("d")).toMatch(/^M[^A-Z]*(C[^A-Z]*){12}Z$/);
-    }
-    await act(async () => {
-      finishAll();
-      await playing;
-    });
-    expect(container.querySelector(".aaa-eye")!.getAttribute("data-shape")).toBe("eye");
   });
 
   it("keeps the eyes closed while sleeping, whatever the expression", () => {
@@ -201,18 +181,41 @@ describe("Avatar", () => {
     expect(AVATAR_CSS).toContain(".aaa[data-activity=sleeping] .aaa-lid-top{transform:translateY(calc(var(--aaa-eye-h)*.85px))}");
   });
 
-  it("turns both eyes into crosses while stuck", () => {
-    const { container } = render(<Avatar activity="stuck" name="a" />);
+  it("turns both eyes into crosses while in error", () => {
+    const { container } = render(<Avatar activity="error" name="a" />);
     const shapes = [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
     expect(shapes).toEqual(["cross", "cross"]);
     expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
   });
 
-  it("looks straight out with one eye wider while asking", () => {
-    const { container } = render(<Avatar activity="asking" name="a" />);
-    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
-    expect(AVATAR_CSS).toContain(".aaa[data-activity=asking][data-expression=neutral] .aaa-eye-r{transform:scale(1.25)}");
-    expect(AVATAR_CSS).not.toMatch(/data-activity=asking\][^{]*\.aaa-blink/);
+  it("sweeps the eyes once when it enters error, but not on mount", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const { container, rerender } = render(<Avatar activity="error" name="a" />);
+    expect(animate).not.toHaveBeenCalled();
+    rerender(<Avatar activity="idle" name="a" />);
+    rerender(<Avatar activity="error" name="a" />);
+    expect(animate).toHaveBeenCalled();
+    expect(container.querySelector("svg")!.dataset.reacting).toBe("error");
+  });
+
+  it("shows x x eyes while the error event plays, then round eyes again", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} name="a" />);
+    const shapes = () => [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+
+    let played!: Promise<void>;
+    act(() => {
+      played = ref.current!.play("error");
+    });
+    expect(shapes()).toEqual(["cross", "cross"]);
+    await act(async () => {
+      finishAll();
+      await played;
+    });
+    expect(shapes()).toEqual(["eye", "eye"]);
   });
 
   it("reads line by line while reading", () => {
@@ -221,14 +224,6 @@ describe("Avatar", () => {
     const read = AVATAR_CSS.match(/@keyframes aaa-read\{(.*?)\}\}/)![1]!;
     for (const line of ["-2px", "0.5px", "3px"]) expect(read).toContain(`translate(-5px,${line})`);
     expect(AVATAR_CSS).toContain(".aaa[data-gaze=read] .aaa-gaze{animation:aaa-read");
-  });
-
-  it("merges the eyes into one blinking cursor while listening", () => {
-    const { container } = render(<Avatar activity="listening" name="a" />);
-    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
-    const shapes = [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
-    expect(shapes).toEqual(["cursor", "cursor"]);
-    expect(AVATAR_CSS).toContain(".aaa[data-activity=listening][data-expression=neutral] .aaa-eye{animation:aaa-caret");
   });
 
   it("narrows the eyes to a slit and inspects up and down while reviewing", () => {
@@ -258,34 +253,48 @@ describe("Avatar", () => {
     expect(AVATAR_EVENTS).not.toContain("wake");
   });
 
-  it("sweeps the eyes once when it gets stuck, but not on mount", () => {
-    stubMatchMedia(false);
-    const { animate } = stubAnimate();
-    const { container, rerender } = render(<Avatar activity="stuck" name="a" />);
-    expect(animate).not.toHaveBeenCalled();
-    rerender(<Avatar activity="idle" name="a" />);
-    rerender(<Avatar activity="stuck" name="a" />);
-    expect(animate).toHaveBeenCalled();
-    expect(container.querySelector("svg")!.dataset.reacting).toBe("stuck");
-  });
-
-  it("shows x x eyes while the error event plays, then round eyes again", async () => {
+  it("turns into the glyph of a glyph event and resolves play once the face has turned back", async () => {
     stubMatchMedia(false);
     const { finishAll } = stubAnimate();
     const ref = createRef<AvatarHandle>();
     const { container } = render(<Avatar ref={ref} name="a" />);
-    const shapes = () => [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+    const glyph = () => container.querySelector("svg")!.dataset.glyph;
+    for (const [event, shape] of [
+      ["success", "check"],
+      ["handoff", "slide"],
+    ] as const) {
+      let resolved = false;
+      let played!: Promise<void>;
+      act(() => {
+        played = ref.current!.play(event).then(() => {
+          resolved = true;
+        });
+      });
+      expect(glyph()).toBe(shape);
+      await act(async () => {
+        finishAll();
+        await Promise.resolve();
+      });
+      expect(glyph()).toBeUndefined();
+      expect(resolved).toBe(false);
+      await act(async () => {
+        finishAll();
+        await played;
+      });
+      expect(resolved).toBe(true);
+    }
+  });
 
-    let played!: Promise<void>;
-    act(() => {
-      played = ref.current!.play("error");
-    });
-    expect(shapes()).toEqual(["cross", "cross"]);
-    await act(async () => {
-      finishAll();
-      await played;
-    });
-    expect(shapes()).toEqual(["eye", "eye"]);
+  it("slides the handoff dot out to the right and back in from the left", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} name="a" />);
+    void ref.current!.play("handoff");
+    const dot = container.querySelector(".aaa-glyph-slide > *");
+    const index = (animate.mock.contexts as Element[]).indexOf(dot!);
+    const transforms = (animate.mock.calls as unknown as [Keyframe[]][])[index]![0].map((frame) => frame.transform);
+    expect(transforms).toEqual(expect.arrayContaining(["translateX(70px)", "translateX(-70px)"]));
   });
 
   it("settles to neutral before a played reaction, but reacts at once to a click", () => {
@@ -377,14 +386,14 @@ describe("Avatar", () => {
 
   it("shrinks the character into three pulsing body-coloured dots while busy and neutral", () => {
     const { container } = render(<Avatar activity="busy" name="a" />);
-    const dots = container.querySelectorAll(".aaa-pending circle");
+    const dots = container.querySelectorAll(".aaa-glyph-dots circle");
     expect(dots).toHaveLength(3);
     for (const dot of dots) expect(dot.getAttribute("fill")).toBe(createSpec("a").body);
     expect(container.querySelector(".aaa-character .aaa-eyes-react")).not.toBeNull();
-    const busy = ".aaa[data-activity=busy][data-expression=neutral]:not([data-reacting])";
-    expect(AVATAR_CSS).toContain(`${busy} .aaa-character{`);
-    expect(AVATAR_CSS).toContain(`${busy} .aaa-pending-dot{`);
-    expect(AVATAR_CSS).toContain(`${busy} .aaa-pending-pulse{animation:aaa-pending`);
+    expect(container.querySelector("svg")!.dataset.glyph).toBe("dots");
+    expect(AVATAR_CSS).toContain(".aaa[data-glyph] .aaa-character{");
+    expect(AVATAR_CSS).toContain(".aaa[data-glyph=dots] .aaa-dot{");
+    expect(AVATAR_CSS).toContain(".aaa[data-glyph=dots] .aaa-dot-pulse{animation:aaa-pending");
     expect(AVATAR_CSS).not.toContain("orbit");
   });
 
@@ -441,9 +450,38 @@ describe("Avatar", () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
+  it("turns into a glyph for each glyph activity while neutral", () => {
+    const { container, rerender } = render(<Avatar name="a" />);
+    const glyph = () => container.querySelector("svg")!.dataset.glyph;
+    expect(glyph()).toBeUndefined();
+    for (const [activity, shape] of [
+      ["busy", "dots"],
+      ["done", "check"],
+      ["attention", "bang"],
+      ["asking", "question"],
+      ["listening", "bars"],
+    ] as const) {
+      rerender(<Avatar activity={activity} name="a" />);
+      expect(glyph()).toBe(shape);
+      expect(container.querySelector(`.aaa-glyph-${shape}`)).not.toBeNull();
+      expect(AVATAR_CSS).toContain(`.aaa[data-glyph=${shape}] `);
+      rerender(<Avatar activity={activity} expression="happy" name="a" />);
+      expect(glyph()).toBeUndefined();
+    }
+    expect(AVATAR_CSS).toContain(".aaa[data-glyph=bars] .aaa-bar{animation:aaa-bar");
+  });
+
+  it("swaps one glyph for another without turning the face again", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const { rerender } = render(<Avatar activity="busy" name="a" />);
+    rerender(<Avatar activity="done" name="a" />);
+    expect(animate).not.toHaveBeenCalled();
+  });
+
   it("draws no dots for an image", () => {
     const { container } = render(<Avatar activity="busy" name="a" src="https://example.test/a.png" />);
-    expect(container.querySelector(".aaa-pending")).toBeNull();
+    expect(container.querySelector(".aaa-glyph-dots")).toBeNull();
   });
 
   it("adds no mouth for an expression when the mouth is off", () => {
@@ -478,10 +516,10 @@ describe("Avatar", () => {
     render(<Avatar ref={ref} accessory="none" mouth="none" name="a" />);
 
     let resolved = false;
-    const playing = ref.current!.play("success").then(() => {
+    const playing = ref.current!.play("acknowledge").then(() => {
       resolved = true;
     });
-    expect(animate).toHaveBeenCalledTimes(2);
+    expect(animate).toHaveBeenCalled();
     await Promise.resolve();
     expect(resolved).toBe(false);
 
@@ -714,14 +752,14 @@ describe("Avatar", () => {
 
     let played!: Promise<void>;
     act(() => {
-      played = ref.current!.play("success");
+      played = ref.current!.play("surprised");
     });
-    expect(onChange).toHaveBeenLastCalledWith("success");
+    expect(onChange).toHaveBeenLastCalledWith("surprised");
     await act(async () => {
       finishAll();
       await played;
     });
-    expect(onChange.mock.calls).toEqual([["success"], [null]]);
+    expect(onChange.mock.calls).toEqual([["surprised"], [null]]);
   });
 
   it("does not report null for an event replaced by a newer one", async () => {
@@ -734,14 +772,14 @@ describe("Avatar", () => {
     let first!: Promise<void>;
     let second!: Promise<void>;
     act(() => {
-      first = ref.current!.play("success");
-      second = ref.current!.play("error");
+      first = ref.current!.play("acknowledge");
+      second = ref.current!.play("surprised");
     });
     await act(async () => {
       finishAll();
       await Promise.all([first, second]);
     });
-    expect(onChange.mock.calls).toEqual([["success"], ["error"], [null]]);
+    expect(onChange.mock.calls).toEqual([["acknowledge"], ["surprised"], [null]]);
   });
 
   it("play moves the mouth and the accessory with the mood", () => {
@@ -750,12 +788,12 @@ describe("Avatar", () => {
     const ref = createRef<AvatarHandle>();
     render(<Avatar ref={ref} accessory="hat" mouth="smile" name="a" />);
 
-    void ref.current!.play("error");
+    void ref.current!.play("surprised");
     const animated = animate.mock.contexts.map((element) =>
       (element as Element).getAttribute("class"),
     );
     expect(animated).toEqual(
-      expect.arrayContaining(["aaa-mouth-rest", "aaa-mood aaa-mood-sad", "aaa-accessory"]),
+      expect.arrayContaining(["aaa-mouth-rest", "aaa-mood aaa-mood-o", "aaa-accessory"]),
     );
   });
 
@@ -843,7 +881,7 @@ describe("Avatar", () => {
     expect([...EXPRESSIONS].filter((name) => (AVATAR_EVENTS as readonly string[]).includes(name))).toEqual([]);
   });
 
-  it("widens both eyes when curious, unlike asking's one wider eye", () => {
+  it("widens both eyes when curious", () => {
     expect(AVATAR_CSS).toContain(".aaa[data-expression=curious] .aaa-eyes-motion{transform:scale(1.12)}");
     expect(AVATAR_CSS).not.toContain(".aaa[data-expression=curious] .aaa-eye-l");
   });

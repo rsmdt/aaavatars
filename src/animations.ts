@@ -9,7 +9,7 @@ export const AVATAR_EVENTS = [
   "yawn",
 ] as const;
 
-import type { EyePose, Mood } from "./parts.js";
+import type { EyePose, Glyph, Mood } from "./parts.js";
 import type { Accessory } from "./spec.js";
 
 export type AvatarEvent = (typeof AVATAR_EVENTS)[number];
@@ -36,6 +36,7 @@ export interface EventAnimation {
   duration: number;
   eye?: (side: -1 | 1, size: EyeSize) => Keyframe[];
   eyes: Keyframe[];
+  glyph?: { frames?: Keyframe[]; shape: Glyph };
   lids?: LidFrame[];
   mood?: { frames?: Keyframe[]; name: Mood; rest?: Keyframe[] };
   mouth?: Keyframe[];
@@ -131,21 +132,6 @@ export const MOOD_SWAP_SHOW: Keyframe[] = [
   { opacity: 1, offset: 0.88 },
 ];
 
-const REST: Keyframe = { offset: 1 };
-
-function nodDepth(ms: number): number {
-  if (ms < 150) return ms / 150;
-  if (ms < 300) return 1 - (ms - 150) / 150;
-  if (ms < 450) return (ms - 300) / 150;
-  return Math.max(0, 1 - (ms - 450) / 310);
-}
-
-function bob(amplitude: number) {
-  return (t: number): Keyframe => ({
-    transform: `translateY(${(Math.sin(t * Math.PI * 4) * amplitude * (1 - 0.38 * t)).toFixed(2)}px)`,
-  });
-}
-
 function sweep(t: number): number {
   const points: [number, number][] = [
     [0, 0],
@@ -161,6 +147,15 @@ function sweep(t: number): number {
   const [toAt, to] = points[index] as [number, number];
   const local = (t - fromAt) / (toAt - fromAt);
   return from + (to - from) * local * local * (3 - 2 * local);
+}
+
+const REST: Keyframe = { offset: 1 };
+
+function nodDepth(ms: number): number {
+  if (ms < 150) return ms / 150;
+  if (ms < 300) return 1 - (ms - 150) / 150;
+  if (ms < 450) return (ms - 300) / 150;
+  return Math.max(0, 1 - (ms - 450) / 310);
 }
 
 export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
@@ -190,56 +185,22 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
     ],
   },
   handoff: {
-    mouth: hold("translateX(5px)", 0.35, 0.65),
-    accessory: {
-      ...stalk(hold("rotate(-15deg)", 0.35, 0.65)),
-      hat: hold("translateX(3px) rotate(6deg)", 0.35, 0.65),
-      glasses: hold("translateX(4px)", 0.3, 0.7),
-      bowtie: hold("rotate(-12deg)", 0.35, 0.65),
-    },
-    duration: 900,
-    body: [
-      { transform: "translateX(0)", easing: EASE_IN_OUT },
-      { transform: "translateX(6px)", offset: 0.35 },
-      { transform: "translateX(6px)", offset: 0.65, easing: EASE_IN_OUT },
-      REST,
-    ],
-    eyes: [
-      { transform: "translateX(0)" },
-      { transform: "translateX(6px)", offset: 0.2 },
-      { transform: "translateX(6px)", offset: 0.7, easing: EASE_IN_OUT },
-      REST,
-    ],
-  },
-  success: {
-    mood: {
-      name: "happy",
-      frames: [
-        { opacity: 1, transform: "scale(1.15)", offset: 0.12 },
-        { opacity: 1, transform: "scale(1.15)", offset: 0.88 },
-      ],
-    },
-    accessory: {
-      antenna: [
-        { transform: "rotate(-20deg)", offset: 0.2 },
-        { transform: "rotate(20deg)", offset: 0.45 },
-        { transform: "rotate(-10deg)", offset: 0.7 },
-      ],
-      sprout: hold("scale(1.35)", 0.3, 0.7),
-      hat: hold("translateY(-4px) rotate(-15deg)", 0.3, 0.7),
-      glasses: hold("translateY(-4px)", 0.3, 0.7),
-      bowtie: hold("scale(1.35)", 0.3, 0.7),
-    },
+    body: [],
     duration: 1500,
-    body: [
-      { transform: "translateY(0)", offset: 0, easing: EASE_HEAD },
-      { transform: "translateY(-1.2px)", offset: 0.21, easing: EASE_HEAD },
-      { transform: "translateY(0)", offset: 0.51 },
-      REST,
-    ],
-    eyes: [...sample(0.147, 0.56, 16, bob(2.5)), REST],
-    pose: "smile",
+    eyes: [],
+    glyph: {
+      shape: "slide",
+      frames: [
+        { transform: "translateX(0)", opacity: 1, offset: 0 },
+        { transform: "translateX(0)", opacity: 1, offset: 0.3, easing: EASE_IN_OUT },
+        { transform: "translateX(70px)", opacity: 0, offset: 0.5 },
+        { transform: "translateX(-70px)", opacity: 0, offset: 0.5, easing: EASE_IN_OUT },
+        { transform: "translateX(0)", opacity: 1, offset: 0.75 },
+        { transform: "translateX(0)", opacity: 1, offset: 1 },
+      ],
+    },
   },
+  success: { body: [], duration: 1400, eyes: [], glyph: { shape: "check" } },
   error: {
     mood: { name: "sad" },
     accessory: {
@@ -535,7 +496,7 @@ export const SLEEP_ANIMATION: EventAnimation = {
   ],
 };
 
-export const STUCK_ANIMATION: EventAnimation = {
+export const ERROR_ANIMATION: EventAnimation = {
   prep: 420,
   duration: 1380,
   body: [
