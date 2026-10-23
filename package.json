@@ -1,6 +1,6 @@
 {
   "name": "aaavatars",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "Deterministic 2D character avatars with a play() animation API",
   "keywords": [
     "avatar",
