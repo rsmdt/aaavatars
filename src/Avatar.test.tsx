@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AVATAR_EVENTS } from "./animations.js";
 import { Avatar, type AvatarHandle, EXPRESSIONS } from "./Avatar.js";
+import { createSpec } from "./spec.js";
 import { AVATAR_CSS } from "./styles.js";
 
 function stubMatchMedia(reduced: boolean) {
@@ -39,9 +40,9 @@ describe("Avatar", () => {
     const { container, rerender } = render(<Avatar name="a" />);
     const data = () => ({ ...container.querySelector("svg")!.dataset });
     expect(data()).toMatchObject({ activity: "idle", expression: "neutral", gaze: "follow" });
-    rerender(<Avatar activity="working" expression="love" name="a" />);
-    expect(data()).toMatchObject({ activity: "working", expression: "love", gaze: "scan" });
-    rerender(<Avatar activity="working" gaze="wander" name="a" />);
+    rerender(<Avatar activity="thinking" expression="love" name="a" />);
+    expect(data()).toMatchObject({ activity: "thinking", expression: "love", gaze: "ponder" });
+    rerender(<Avatar activity="thinking" gaze="wander" name="a" />);
     expect(data().gaze).toBe("wander");
   });
 
@@ -82,7 +83,6 @@ describe("Avatar", () => {
 
   it("expresses every non-neutral expression and the closed activities through the lids", () => {
     for (const state of [
-      "data-expression=happy] .aaa-lid-bottom",
       "data-expression=sad] .aaa-lid-top.aaa-lid-l",
       "data-expression=sad] .aaa-lid-top.aaa-lid-r",
       "data-expression=confused] .aaa-lid-top.aaa-lid-r",
@@ -94,6 +94,15 @@ describe("Avatar", () => {
     expect(AVATAR_CSS.indexOf(".aaa:not([data-expression=neutral]) .aaa-lid{transform:none}")).toBeGreaterThan(
       AVATAR_CSS.indexOf("[data-activity=sleeping] .aaa-lid-bottom"),
     );
+  });
+
+  it("morphs the eyes into smiling arcs while happy, whatever the activity", () => {
+    const { container, rerender } = render(<Avatar expression="happy" name="a" />);
+    const shapes = () => [...container.querySelectorAll(".aaa-eye")].map((eye) => eye.getAttribute("data-shape"));
+    expect(shapes()).toEqual(["smile", "smile"]);
+    rerender(<Avatar activity="coding" expression="happy" name="a" />);
+    expect(shapes()).toEqual(["smile", "smile"]);
+    expect(AVATAR_CSS).not.toContain("data-expression=happy] .aaa-lid");
   });
 
   it("morphs the real eyes into a >_ prompt with a blinking cursor while coding", () => {
@@ -127,7 +136,7 @@ describe("Avatar", () => {
     const shape = () => container.querySelector(".aaa-eye-l")!.getAttribute("data-shape");
     let playing!: Promise<void>;
     act(() => {
-      playing = ref.current!.play("success");
+      playing = ref.current!.play("acknowledge");
     });
     expect(shape()).toBe("eye");
     await act(async () => {
@@ -135,6 +144,26 @@ describe("Avatar", () => {
       await playing;
     });
     expect(shape()).toBe("prompt");
+  });
+
+  it("morphs the eyes into smiling arcs for success, with the same path commands", async () => {
+    stubMatchMedia(false);
+    const { finishAll } = stubAnimate();
+    const ref = createRef<AvatarHandle>();
+    const { container } = render(<Avatar ref={ref} eyes="dot" name="a" />);
+    let playing!: Promise<void>;
+    act(() => {
+      playing = ref.current!.play("success");
+    });
+    for (const eye of container.querySelectorAll(".aaa-eye")) {
+      expect(eye.getAttribute("data-shape")).toBe("smile");
+      expect(eye.querySelector(".aaa-shape")!.getAttribute("d")).toMatch(/^M[^A-Z]*(C[^A-Z]*){12}Z$/);
+    }
+    await act(async () => {
+      finishAll();
+      await playing;
+    });
+    expect(container.querySelector(".aaa-eye")!.getAttribute("data-shape")).toBe("eye");
   });
 
   it("keeps the eyes closed while sleeping, whatever the expression", () => {
@@ -336,7 +365,7 @@ describe("Avatar", () => {
     expect(AVATAR_CSS).toContain(".aaa[data-offscreen] *{animation-play-state:paused!important}");
   });
 
-  it("wanders with saccades from the centre, ponders, scans and orbits while waiting", () => {
+  it("wanders with saccades from the centre, ponders and scans", () => {
     expect(AVATAR_CSS).toMatch(/@keyframes aaa-saccade\{0%\{transform:translate\(0px,0px\) scaleX\(1\.000\)/);
     expect(AVATAR_CSS).toContain(".aaa[data-gaze=follow]:not([data-pointer]) .aaa-gaze,.aaa[data-gaze=wander] .aaa-gaze{animation:aaa-saccade");
     expect(AVATAR_CSS).toContain(".aaa[data-gaze=ponder] .aaa-gaze{animation:aaa-ponder");
@@ -344,9 +373,77 @@ describe("Avatar", () => {
     const percents = [...ponder.matchAll(/(\d+(?:\.\d+)?)%\{/g)].map((match) => match[1]);
     expect(new Set(percents).size).toBe(percents.length);
     expect(ponder.split("cubic-bezier(.22,1,.36,1)").length - 1).toBeGreaterThanOrEqual(3);
-    expect(AVATAR_CSS).toContain(".aaa[data-activity=waiting] .aaa-eye-l{animation:aaa-orbit-l 3.2s linear .32s infinite}");
-    const { container } = render(<Avatar activity="waiting" name="a" />);
-    expect(container.querySelector("svg")!.dataset.gaze).toBe("ahead");
+  });
+
+  it("shrinks the character into three pulsing body-coloured dots while busy and neutral", () => {
+    const { container } = render(<Avatar activity="busy" name="a" />);
+    const dots = container.querySelectorAll(".aaa-pending circle");
+    expect(dots).toHaveLength(3);
+    for (const dot of dots) expect(dot.getAttribute("fill")).toBe(createSpec("a").body);
+    expect(container.querySelector(".aaa-character .aaa-eyes-react")).not.toBeNull();
+    const busy = ".aaa[data-activity=busy][data-expression=neutral]:not([data-reacting])";
+    expect(AVATAR_CSS).toContain(`${busy} .aaa-character{`);
+    expect(AVATAR_CSS).toContain(`${busy} .aaa-pending-dot{`);
+    expect(AVATAR_CSS).toContain(`${busy} .aaa-pending-pulse{animation:aaa-pending`);
+    expect(AVATAR_CSS).not.toContain("orbit");
+  });
+
+  it("turns each eye on its own around the head into busy, and on round from the left out of it", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const { container, rerender } = render(<Avatar mouth="smile" name="a" shape="circle" />);
+    const face = container.querySelector(".aaa-face")!;
+    const turns = (selector: string) => {
+      const element = face.querySelector(selector);
+      return (animate.mock.contexts as Element[]).flatMap((context, index) =>
+        context === element ? [(animate.mock.calls as unknown as [Keyframe[]][])[index]![0]] : [],
+      );
+    };
+    const mouth = ".aaa-face > .aaa-look";
+
+    rerender(<Avatar activity="busy" mouth="smile" name="a" shape="circle" />);
+    expect(turns(".aaa-face")).toEqual([]);
+    for (const selector of [".aaa-eye-l", ".aaa-eye-r", mouth]) {
+      expect(turns(selector)[0]![0]!.transform).toBe("translateX(0.00px) scaleX(1.000)");
+    }
+    expect(turns(".aaa-eye-r")[0]!.at(-1)!.transform).toBe("translateX(12.80px) scaleX(0.000)");
+    expect(turns(".aaa-eye-l")[0]!.at(-1)!.transform).toBe("translateX(44.80px) scaleX(0.000)");
+    expect(turns(mouth)[0]!.at(-1)!.transform).toBe("translateX(28.80px) scaleX(0.000)");
+    const rightGone = turns(".aaa-eye-r")[0]!.findIndex((frame) => String(frame.transform).endsWith("scaleX(0.000)"));
+    const leftGone = turns(".aaa-eye-l")[0]!.findIndex((frame) => String(frame.transform).endsWith("scaleX(0.000)"));
+    expect(rightGone).toBeLessThan(leftGone);
+
+    rerender(<Avatar mouth="smile" name="a" shape="circle" />);
+    expect(turns(".aaa-eye-r")[1]![0]!.transform).toBe("translateX(-44.80px) scaleX(0.000)");
+    expect(turns(".aaa-eye-l")[1]![0]!.transform).toBe("translateX(-12.80px) scaleX(0.000)");
+    for (const selector of [".aaa-eye-l", ".aaa-eye-r", mouth]) {
+      expect(turns(selector)[1]!.at(-1)!.transform).toBe("translateX(0.00px) scaleX(1.000)");
+    }
+  });
+
+  it("keeps the glasses on both eyes while the head turns", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const { container, rerender } = render(<Avatar accessory="glasses" name="a" shape="circle" />);
+    rerender(<Avatar accessory="glasses" activity="busy" name="a" shape="circle" />);
+    const glasses = container.querySelector(".aaa-face > [data-accessory=glasses]");
+    const index = (animate.mock.contexts as Element[]).indexOf(glasses!);
+    const frames = (animate.mock.calls as unknown as [Keyframe[]][])[index]![0];
+    expect(frames[0]!.transform).toBe("translateX(0.00px) scaleX(1.000)");
+    expect(frames.at(-1)!.transform).toBe("translateX(28.80px) scaleX(0.000)");
+  });
+
+  it("does not turn the face into busy while showing an expression", () => {
+    stubMatchMedia(false);
+    const { animate } = stubAnimate();
+    const { rerender } = render(<Avatar expression="happy" name="a" />);
+    rerender(<Avatar activity="busy" expression="happy" name="a" />);
+    expect(animate).not.toHaveBeenCalled();
+  });
+
+  it("draws no dots for an image", () => {
+    const { container } = render(<Avatar activity="busy" name="a" src="https://example.test/a.png" />);
+    expect(container.querySelector(".aaa-pending")).toBeNull();
   });
 
   it("adds no mouth for an expression when the mouth is off", () => {
@@ -384,7 +481,7 @@ describe("Avatar", () => {
     const playing = ref.current!.play("success").then(() => {
       resolved = true;
     });
-    expect(animate).toHaveBeenCalledTimes(6);
+    expect(animate).toHaveBeenCalledTimes(2);
     await Promise.resolve();
     expect(resolved).toBe(false);
 
@@ -439,13 +536,14 @@ describe("Avatar", () => {
     expect(container.querySelector(".aaa-eyes-react")).not.toBeNull();
   });
 
-  it("wraps the svg only when a badge is given and keeps the svg accessible", () => {
+  it("draws a dot in the accent colour, or the given colour, only when asked", () => {
     const { container, rerender } = render(<Avatar name="a" />);
+    expect(container.querySelector("[data-dot]")).toBeNull();
+    rerender(<Avatar dot name="a" />);
     expect(container.firstElementChild?.tagName).toBe("svg");
-    rerender(<Avatar badge={<b>1</b>} name="a" />);
-    expect(container.firstElementChild?.tagName).toBe("SPAN");
-    expect(container.querySelector("[data-badge]")?.textContent).toBe("1");
-    expect(container.querySelector("svg")?.getAttribute("role")).toBe("img");
+    expect(container.querySelector("[data-dot]")?.getAttribute("fill")).toBe(createSpec("a").accent);
+    rerender(<Avatar dot="#ff0000" name="a" />);
+    expect(container.querySelector("[data-dot]")?.getAttribute("fill")).toBe("#ff0000");
   });
 
   it("exposes the label as tooltip and accessible name", () => {

@@ -11,8 +11,8 @@ export const TASK_STEPS: TaskStep[] = [
   { activity: "thinking", task: "Plan the migration", tool: "Notes" },
   { activity: "coding", task: "Write the new invoice module", tool: "Editor" },
   { activity: "reviewing", task: "Review its own diff", tool: "GitHub" },
-  { activity: "waiting", task: "Wait for CI to pass", tool: "CI" },
-  { activity: "working", task: "Open pull request #482", tool: "GitHub" },
+  { activity: "busy", task: "Wait for CI to pass", tool: "CI" },
+  { activity: "busy", task: "Open pull request #482", tool: "GitHub" },
 ];
 
 export interface Worker {
@@ -25,7 +25,7 @@ export interface Worker {
 
 export const WORKERS: Worker[] = [
   { name: "Inbox", app: "Mail", activity: "reading", task: "Triaging 212 new emails" },
-  { name: "Ledger", app: "Sheets", activity: "working", task: "Reconciling March expenses" },
+  { name: "Ledger", app: "Sheets", activity: "busy", task: "Reconciling March expenses" },
   {
     name: "Patch",
     app: "GitHub",
@@ -58,8 +58,8 @@ export const QUOTES: Quote[] = [
   },
   {
     handle: "@queue-keeper",
-    activity: "waiting",
-    text: "My eyes circle each other. Nobody asks if I've crashed anymore.",
+    activity: "busy",
+    text: "I fold into three dots. Nobody asks if I've crashed anymore.",
   },
   {
     handle: "@hotfix",

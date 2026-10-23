@@ -67,9 +67,9 @@ export const PALETTES = [
 
 export interface Look {
   accessory?: Accessory;
-  badge: boolean;
   blink: boolean;
   content: AvatarContent;
+  dot: boolean;
   eyes?: Eyes;
   fill?: Fill;
   framed: boolean;
@@ -85,9 +85,9 @@ export interface Look {
 }
 
 export const DEFAULT_LOOK: Look = {
-  badge: false,
   blink: true,
   content: "face",
+  dot: false,
   framed: true,
   interactive: true,
   loop: true,
@@ -126,11 +126,7 @@ export function lookProps(look: Look) {
 export function liveProps(look: Look) {
   return {
     ...lookProps(look),
-    badge: look.badge ? (
-      <span className="grid size-7 place-items-center rounded-full bg-white text-sm text-amber-500 shadow">
-        ★
-      </span>
-    ) : undefined,
+    dot: look.dot,
     interactive: look.interactive,
   } satisfies AvatarProps;
 }

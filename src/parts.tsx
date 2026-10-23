@@ -22,7 +22,7 @@ const EYE_HALF_HEIGHT: Record<Eyes, number> = { dot: 7, round: 10, tall: 11, wid
 
 const EYE_HALF_WIDTH: Record<Eyes, number> = { dot: 7, round: 8, tall: 5, wide: 11 };
 
-export type EyePose = "eye" | "prompt" | "cross" | "cursor";
+export type EyePose = "eye" | "prompt" | "cross" | "cursor" | "smile";
 
 type Point = [x: number, y: number];
 
@@ -102,6 +102,23 @@ function stadium(r: number, half: number): string {
   );
 }
 
+function smileArc(rx: number, ry: number, thickness: number, dy: number): string {
+  const half = thickness / 2;
+  const quarters = (cx: number, r: number, rY: number, from: number, to: number) =>
+    [0, 1].map((index) => arc(cx, dy, r, rY, (from + ((to - from) * index) / 2) * DEG, (from + ((to - from) * (index + 1)) / 2) * DEG));
+  return toPath(
+    [0, dy - ry - half],
+    [
+      ...quarters(0, rx + half, ry + half, -90, 0),
+      ...quarters(rx, half, half, 0, 180),
+      ...quarters(0, rx - half, ry - half, 0, -90),
+      ...quarters(0, rx - half, ry - half, -90, -180),
+      ...quarters(-rx, half, half, 0, 180),
+      ...quarters(0, rx + half, ry + half, 180, 270),
+    ],
+  );
+}
+
 function polygon(vertices: Point[], dx = 0): string {
   const shifted = vertices.map(([x, y]): Point => [x + dx, y]);
   const edges = shifted.map((from, index) => ({ from, to: shifted[(index + 1) % shifted.length]!, parts: 1 }));
@@ -133,6 +150,7 @@ function polygon(vertices: Point[], dx = 0): string {
 
 export function eyePath(eyes: Eyes, pose: EyePose, side: -1 | 1, gap: number): string {
   if (pose === "cross") return polygon(CROSS);
+  if (pose === "smile") return smileArc(7, 7.5, 6.5, 3.5);
   if (pose === "cursor") return polygon([[-2, -13.5], [2, -13.5], [2, 13.5], [-2, 13.5]], -side * gap);
   if (pose === "prompt" && side === -1) {
     return polygon([[-8, -14], [0, -14], [10, 0], [0, 14], [-8, 14], [2, 0]], gap - 11.5);

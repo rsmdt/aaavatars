@@ -91,8 +91,8 @@ export function Appearance({ look, onChange }: { look: Look; onChange: (patch: P
         <Switch checked={look.interactive} onChange={(interactive) => onChange({ interactive })}>
           Interactive
         </Switch>
-        <Switch checked={look.badge} onChange={(badge) => onChange({ badge })}>
-          Badge
+        <Switch checked={look.dot} onChange={(dot) => onChange({ dot })}>
+          Dot
         </Switch>
       </div>
     </section>

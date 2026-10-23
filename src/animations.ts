@@ -238,12 +238,7 @@ export const EVENT_ANIMATIONS: Record<AvatarEvent, EventAnimation> = {
       REST,
     ],
     eyes: [...sample(0.147, 0.56, 16, bob(2.5)), REST],
-    lids: [
-      { offset: 0, top: 0, bottom: 0 },
-      { offset: 0.147, top: 0, bottom: 1 },
-      { offset: 0.653, top: 0, bottom: 1, easing: EASE_OUT },
-      { offset: 1 },
-    ],
+    pose: "smile",
   },
   error: {
     mood: { name: "sad" },
@@ -477,6 +472,49 @@ export const WAKE_ANIMATION: EventAnimation = {
     { offset: 1 },
   ],
 };
+
+const HEAD_RADIUS_PER_GAP = 1.8;
+const TURN_SPAN = Math.PI / 2 + Math.asin(1 / HEAD_RADIUS_PER_GAP);
+
+export type TurnPose = (turn: number) => Keyframe;
+
+function surfaceShift(gap: number, offset: number, turn: number) {
+  const radius = gap * HEAD_RADIUS_PER_GAP;
+  const rest = Math.asin(offset / radius);
+  const angle = Math.min(Math.max(rest + turn, -Math.PI / 2), Math.PI / 2);
+  return { angle, rest, x: radius * Math.sin(angle) - offset };
+}
+
+export function featureTurn(gap: number, offset: number): TurnPose {
+  return (turn) => {
+    const { angle, rest, x } = surfaceShift(gap, offset, turn);
+    const width = Math.cos(angle) / Math.cos(rest);
+    return { transform: `translateX(${x.toFixed(2)}px) scaleX(${width.toFixed(3)})` };
+  };
+}
+
+export function spanTurn(gap: number): TurnPose {
+  return (turn) => {
+    const left = -gap + surfaceShift(gap, -gap, turn).x;
+    const right = gap + surfaceShift(gap, gap, turn).x;
+    const width = (right - left) / (2 * gap);
+    return { transform: `translateX(${((left + right) / 2).toFixed(2)}px) scaleX(${width.toFixed(3)})` };
+  };
+}
+
+export function turnAway(pose: TurnPose) {
+  return {
+    frames: sample(0, 1, 12, (t) => pose(TURN_SPAN * t * t)),
+    timing: { duration: 300 },
+  };
+}
+
+export function turnBack(pose: TurnPose) {
+  return {
+    frames: sample(0, 1, 12, (t) => pose(-TURN_SPAN * (1 - t) ** 2)),
+    timing: { delay: 200, duration: 300, fill: "backwards" as const },
+  };
+}
 
 export const SLEEP_ANIMATION: EventAnimation = {
   prep: 0,

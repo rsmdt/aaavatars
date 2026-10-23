@@ -38,11 +38,11 @@ await avatar.current?.play("success");
 | `fill` | `solid` or `gradient` |
 | `shading` | soft-clay depth from `0` to `1` |
 | `src` | image URL, falls back to the character when it fails to load |
-| `badge` | node pinned to the bottom-right corner |
+| `dot` | `true` for a bottom-right dot in the accent colour, or a colour for the dot |
 | `label` | tooltip and accessible description |
 | `onChange` | called with an event when it starts playing, and `null` when it ends |
 
-`frame`, `blink`, `loop`, `interactive`, `mouth`, `accessory` and `shading` are off until you set them. Unset `shape`, `eyes` and colours come from the name.
+`frame`, `blink`, `loop`, `interactive`, `mouth`, `accessory`, `shading` and `dot` are off until you set them. Unset `shape`, `eyes` and colours come from the name.
 
 ## Layers
 
@@ -60,14 +60,13 @@ Each layer changes without touching the others. While an event plays it owns the
 | Activity | Body | Eyes, while `neutral` | Gaze |
 |---|---|---|---|
 | `idle` | slow drift | | `follow` |
+| `busy` | turns away, then folds into three pulsing dots, and turns back round when it ends | | `ahead` |
 | `thinking` | sway | | `ponder` |
-| `working` | quick bob | | `scan` |
 | `reading` | still | | `read` |
 | `searching` | leans in | dart and hold | `ahead` |
 | `reviewing` | head dips | narrow, look down and up | `ahead` |
 | `coding` | bob | a `>_` prompt with a blinking cursor | `ahead` |
 | `writing` | slow bob | | `read` |
-| `waiting` | still | circle around each other | `ahead` |
 | `asking` | head tilted | one eye wider | `ahead` |
 | `listening` | nod | one tall blinking cursor | `ahead` |
 | `speaking` | bob, mouth talks | | `follow` |
@@ -79,7 +78,7 @@ Each layer changes without touching the others. While an event plays it owns the
 | Expression | Eyes |
 |---|---|
 | `neutral` | the activity's eyes |
-| `happy` | bottom lids raised |
+| `happy` | smiling `∩ ∩` arcs |
 | `sad` | top lids down, tilted outward |
 | `angry` | top lids down, tilted inward |
 | `confused` | one lid lowered |
