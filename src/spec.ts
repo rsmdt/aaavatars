@@ -58,7 +58,7 @@ export interface SpecOptions {
   shape?: Shape;
 }
 
-function hash(value: string): number {
+export function hash(value: string): number {
   let result = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
     result = Math.imul(result ^ value.charCodeAt(index), 16777619);

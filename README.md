@@ -15,7 +15,7 @@ import { Avatar, type AvatarHandle } from "aaavatars";
 
 const avatar = useRef<AvatarHandle>(null);
 
-<Avatar ref={avatar} name="Chief of Staff" frame={0.5} blink loop activity="coding" />;
+<Avatar ref={avatar} name="Chief of Staff" activity="coding" />;
 
 await avatar.current?.play("success");
 ```
@@ -53,57 +53,37 @@ await avatar.current?.play("success");
 | Gaze | where is it looking? | `gaze`, defaults per activity |
 | Event | what just happened? | `play(event)`, lasts 1 to 3 seconds |
 
-Each layer changes without touching the others. While an event plays it owns the face. Otherwise a non-`neutral` expression owns the eyes, the activity owns the body, and the gaze only moves where the eyes point.
-
 ### Activity
 
-| Activity | Body | Eyes, while `neutral` | Gaze |
-|---|---|---|---|
-| `idle` | slow drift | | `follow` |
-| `busy` | turns away, then folds into three pulsing dots, and turns back round when it ends | | `ahead` |
-| `done` | turns away and folds into a check mark | | `ahead` |
-| `attention` | turns away and folds into a `!` | | `ahead` |
-| `thinking` | sway | | `ponder` |
-| `reading` | still | | `read` |
-| `searching` | leans in | dart and hold | `ahead` |
-| `reviewing` | head dips | narrow, look down and up | `ahead` |
-| `coding` | bob | a `>_` prompt with a blinking cursor | `ahead` |
-| `writing` | slow bob | | `read` |
-| `asking` | turns away and folds into a `?` | | `ahead` |
-| `listening` | turns away and folds into bouncing sound bars | | `ahead` |
-| `speaking` | bob, mouth talks | | `follow` |
-| `error` | tilted | sweep, then `x x` | `ahead` |
-| `sleeping` | breathe, sunk | droop and close, whatever the expression | `ahead` |
+| Activity | Signals |
+|---|---|
+| `idle` | nothing to do |
+| `busy` | working, shows pulsing dots |
+| `done` | finished, shows a check mark |
+| `attention` | needs you, shows a `!` |
+| `thinking` | reasoning |
+| `reading` | reading input |
+| `searching` | looking something up |
+| `reviewing` | checking work |
+| `coding` | writing code |
+| `writing` | writing text |
+| `asking` | has a question, shows a `?` |
+| `listening` | taking voice input, shows sound bars |
+| `speaking` | talking |
+| `error` | something failed |
+| `sleeping` | inactive |
 
 ### Expression
 
-| Expression | Eyes |
-|---|---|
-| `neutral` | the activity's eyes |
-| `happy` | smiling `∩ ∩` arcs |
-| `sad` | top lids down, tilted outward |
-| `angry` | top lids down, tilted inward |
-| `confused` | one lid lowered |
-| `curious` | both eyes slightly wider |
-| `tired` | heavy top lids |
-| `love` | one beating heart |
+`neutral`, `happy`, `sad`, `angry`, `confused`, `curious`, `tired`, `love`
 
 ### Gaze
 
-| Gaze | Eyes |
-|---|---|
-| `follow` | follow the pointer anywhere on the page |
-| `wander` | glance around, ignoring the pointer |
-| `ponder` | look up-left, then up-right |
-| `scan` | sweep right, jump back |
-| `read` | read line by line |
-| `ahead` | look straight out |
-| `down` | look down at the work |
-| `away` | look off to the side |
+`follow` (the pointer), `wander`, `ponder`, `scan`, `read`, `ahead`, `down`, `away`
 
 ### Event
 
-`play(event)` resolves when the reaction ends, or immediately under `prefers-reduced-motion`. It does not change the props. `EVENT_LAYERS[event]` names the expression and gaze it shows, for example `sigh` shows `tired` eyes looking `ahead`. `success` and `handoff` turn the avatar into a glyph and resolve once it has turned back.
+`await play(event)` resolves when the reaction ends, or immediately with reduced motion.
 
 | Event | Reaction |
 |---|---|
@@ -122,6 +102,8 @@ Each layer changes without touching the others. While an event plays it owns the
 <AvatarGroup max={4} size={28} members={[{ name: "Ada", content: "initial" }, { name: "Research" }]} />
 ```
 
+`members` takes Avatar props. The group fills at most `max` slots (default `4`), the last one a `+N` bubble when there are more members. `size` defaults to `32`, `overlap` is a fraction of the size (default `0.3`), and `ringColor` outlines framed avatars (default white).
+
 ## Static SVG
 
 ```ts
@@ -132,10 +114,3 @@ const svg = renderAvatarSvg({ name: "Research", size: 128 });
 
 Requires `react-dom`.
 
-## Development
-
-```sh
-npm run dev
-npm test
-npm run build
-```

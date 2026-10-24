@@ -578,7 +578,7 @@ describe("Avatar", () => {
     const { container, rerender } = render(<Avatar name="a" />);
     expect(container.querySelector("[data-dot]")).toBeNull();
     rerender(<Avatar dot name="a" />);
-    expect(container.firstElementChild?.tagName).toBe("svg");
+    expect(container.querySelector("svg > [data-dot]")).not.toBeNull();
     expect(container.querySelector("[data-dot]")?.getAttribute("fill")).toBe(createSpec("a").accent);
     rerender(<Avatar dot="#ff0000" name="a" />);
     expect(container.querySelector("[data-dot]")?.getAttribute("fill")).toBe("#ff0000");

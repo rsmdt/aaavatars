@@ -17,7 +17,8 @@ export function AvatarGroup({
   ringColor = "#FFFFFF",
   size = 32,
 }: AvatarGroupProps) {
-  const visible = members.length > max ? members.slice(0, max - 1) : members;
+  const limit = Math.max(1, Math.floor(max));
+  const visible = members.length > limit ? members.slice(0, Math.max(limit - 1, 1)) : members;
   const hidden = members.length - visible.length;
   const label = [
     visible.map((member) => member.name).join(", "),
@@ -26,12 +27,18 @@ export function AvatarGroup({
     .filter(Boolean)
     .join(" ");
   const offset = -Math.round(size * overlap);
+  const seen = new Map<string, number>();
+  const keys = visible.map((member) => {
+    const count = seen.get(member.name) ?? 0;
+    seen.set(member.name, count + 1);
+    return `${member.name}-${count}`;
+  });
 
   return (
     <div aria-label={label} className={className} role="group" style={{ display: "inline-flex" }}>
       {visible.map((member, index) => (
         <span
-          key={`${member.name}-${index}`}
+          key={keys[index]}
           style={{
             borderRadius: frameRadius(member.frame),
             boxShadow: member.frame === undefined ? undefined : `0 0 0 2px ${ringColor}`,

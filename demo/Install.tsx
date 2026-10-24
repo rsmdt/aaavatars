@@ -27,7 +27,7 @@ const PLAY = `import { Avatar, type AvatarHandle } from "aaavatars";
 
 const avatar = useRef<AvatarHandle>(null);
 
-<Avatar ref={avatar} name="Research" activity="busy" blink loop frame={0.5} />;
+<Avatar ref={avatar} name="Research" />;
 
 await avatar.current?.play("success");`;
 
@@ -78,13 +78,13 @@ export function Install() {
           <Step
             code={RENDER}
             index={2}
-            text="Set the lasting layers as props. Gaze is optional: each activity picks its own."
+            text="Set what it's doing and how it feels."
             title="Render a face"
           />
           <Step
             code={PLAY}
             index={3}
-            text="Call play() for a one-off reaction. It resolves when the face is back at rest."
+            text="Call play() for a one-off reaction. Await it to know when it's done."
             title="Play an event"
           />
           <Step

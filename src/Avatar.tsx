@@ -2,8 +2,10 @@ import {
   type CSSProperties,
   type MouseEvent,
   type PointerEvent,
+  createContext,
   forwardRef,
   useCallback,
+  useContext,
   useEffect,
   useId,
   useImperativeHandle,
@@ -238,6 +240,8 @@ function clampFrame(frame: number): number {
   return Math.min(Math.max(frame, 0), 0.5);
 }
 
+export const InlineStyleContext = createContext(false);
+
 export function frameRadius(frame: number | undefined): string | undefined {
   if (frame === undefined) return undefined;
   return `${clampFrame(frame) * 100}%`;
@@ -290,6 +294,7 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const latestOnChange = useRef(onChange);
   latestOnChange.current = onChange;
   const latestPlay = useRef(0);
+  const inlineStyle = useContext(InlineStyleContext);
 
   useEffect(() => setImageFailed(false), [src]);
 
@@ -336,10 +341,14 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   const holdGlyph = useCallback(
     async (glyph: NonNullable<EventAnimation["glyph"]>, duration: number) => {
       const holder = svgRef.current?.querySelector(`.aaa-glyph-${glyph.shape} > *`);
-      const started = holder ? [holder.animate(glyph.frames ?? [{}, {}], { duration })] : [];
+      if (!holder) {
+        setEventGlyph(null);
+        return;
+      }
+      const started = [holder.animate(glyph.frames ?? [{}, {}], { duration })];
       running.current = started;
       await Promise.all(started.map((animation) => animation.finished)).catch(() => undefined);
-      if (running.current !== started) return;
+      if (running.current !== started || !svgRef.current) return;
       await new Promise<void>((resolve) => {
         glyphSettled.current?.();
         glyphSettled.current = resolve;
@@ -351,6 +360,8 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
 
   const run = useCallback((name: string, animation: EventAnimation, immediate = false) => {
     for (const animation of running.current) animation.cancel();
+    svgRef.current?.removeAttribute("data-reacting");
+    setReacting(null);
     const target = bodyRef.current;
     const eyePair = eyesRef.current;
     if (
@@ -456,13 +467,28 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
     if (activity === "sleeping") void run("sleep", SLEEP_ANIMATION);
     else if (previous === "sleeping") void run("wake", WAKE_ANIMATION);
     else if (activity === "error") void run("error", ERROR_ANIMATION);
-  }, [activity, play, run]);
+  }, [activity, run]);
 
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
     return watchVisibility(svg);
   }, []);
+
+  useEffect(
+    () => () => {
+      for (const animation of running.current) animation.cancel();
+      for (const animation of turning.current) animation.cancel();
+      glyphSettled.current?.();
+      glyphSettled.current = null;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!interactive) return;
+    return endDrag;
+  }, [interactive]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -526,227 +552,234 @@ export const Avatar = forwardRef<AvatarHandle, AvatarProps>(function Avatar(
   }
 
   return (
-    <svg
-      ref={svgRef}
-      aria-label={label ? `${name}, ${label}` : name}
-      className={className ? `aaa ${className}` : "aaa"}
-      data-activity={activity}
-      data-glyph={glyph}
-      data-blink={blink ? undefined : "off"}
-      data-expression={shownExpression}
-      data-gaze={resolvedGaze}
-      data-interactive={interactive ? "" : undefined}
-      data-loop={loop ? undefined : "off"}
-      height={size}
-      overflow={framed ? undefined : "visible"}
-      role="img"
-      style={
-        {
-          "--aaa-gap": geometry.eyeGap,
-          "--aaa-phase": spec.phase,
-          "--aaa-tempo": spec.tempo,
-        } as CSSProperties
-      }
-      viewBox="0 0 100 100"
-      width={size}
-      onClick={interactive ? handleClick : undefined}
-      onPointerCancel={interactive ? endDrag : undefined}
-      onPointerDown={interactive ? startDrag : undefined}
-      onPointerMove={interactive ? moveDrag : undefined}
-      onPointerUp={interactive ? endDrag : undefined}
-    >
-      {label ? <title>{label}</title> : null}
-      <style>{AVATAR_CSS}</style>
-      <defs>
-        {framed ? (
-          <clipPath id={`${uid}-frame`}>
-            <rect width={100} height={100} rx={radius} />
-          </clipPath>
-        ) : null}
-        {fill === "gradient" ? (
-          <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={shadeHex(spec.body, 0.18)} />
-            <stop offset="100%" stopColor={shadeHex(spec.body, -0.22)} />
-          </linearGradient>
-        ) : null}
-        {clay ? (
-          <>
-            <clipPath id={`${uid}-body`}>
-              <path d={geometry.path} />
+    <>
+      {inlineStyle ? null : (
+        <style href="aaavatars" precedence="default">
+          {AVATAR_CSS}
+        </style>
+      )}
+      <svg
+        ref={svgRef}
+        aria-label={label ? `${name}, ${label}` : name}
+        className={className ? `aaa ${className}` : "aaa"}
+        data-activity={activity}
+        data-glyph={glyph}
+        data-blink={blink ? undefined : "off"}
+        data-expression={shownExpression}
+        data-gaze={resolvedGaze}
+        data-interactive={interactive ? "" : undefined}
+        data-loop={loop ? undefined : "off"}
+        height={size}
+        overflow={framed ? undefined : "visible"}
+        role="img"
+        style={
+          {
+            "--aaa-gap": geometry.eyeGap,
+            "--aaa-phase": spec.phase,
+            "--aaa-tempo": spec.tempo,
+          } as CSSProperties
+        }
+        viewBox="0 0 100 100"
+        width={size}
+        onClick={interactive ? handleClick : undefined}
+        onPointerCancel={interactive ? endDrag : undefined}
+        onPointerDown={interactive ? startDrag : undefined}
+        onPointerMove={interactive ? moveDrag : undefined}
+        onPointerUp={interactive ? endDrag : undefined}
+      >
+        {label ? <title>{label}</title> : null}
+        {inlineStyle ? <style>{AVATAR_CSS}</style> : null}
+        <defs>
+          {framed ? (
+            <clipPath id={`${uid}-frame`}>
+              <rect width={100} height={100} rx={radius} />
             </clipPath>
-            <mask id={`${uid}-outside`} maskUnits="userSpaceOnUse" x={-20} y={-20} width={140} height={140}>
-              <rect x={-20} y={-20} width={140} height={140} fill="#fff" />
-              <path d={geometry.path} fill="#000" />
-            </mask>
-            <radialGradient id={`${uid}-rim`} cx="0.5" cy="0.5" fx="0.42" fy="0.36" r="0.5">
-              <stop offset="45%" stopColor="#000000" stopOpacity={0} />
-              <stop offset="80%" stopColor="#000000" stopOpacity={0.1 * shading} />
-              <stop offset="100%" stopColor="#000000" stopOpacity={0.3 * shading} />
-            </radialGradient>
-            <radialGradient id={`${uid}-sheen`}>
-              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.6 * shading} />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
-            </radialGradient>
-            <radialGradient id={`${uid}-shadow`}>
-              <stop offset="0%" stopColor="#000000" stopOpacity={0.3 * shading} />
-              <stop offset="100%" stopColor="#000000" stopOpacity={0} />
-            </radialGradient>
-          </>
+          ) : null}
+          {fill === "gradient" ? (
+            <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={shadeHex(spec.body, 0.18)} />
+              <stop offset="100%" stopColor={shadeHex(spec.body, -0.22)} />
+            </linearGradient>
+          ) : null}
+          {clay ? (
+            <>
+              <clipPath id={`${uid}-body`}>
+                <path d={geometry.path} />
+              </clipPath>
+              <mask id={`${uid}-outside`} maskUnits="userSpaceOnUse" x={-20} y={-20} width={140} height={140}>
+                <rect x={-20} y={-20} width={140} height={140} fill="#fff" />
+                <path d={geometry.path} fill="#000" />
+              </mask>
+              <radialGradient id={`${uid}-rim`} cx="0.5" cy="0.5" fx="0.42" fy="0.36" r="0.5">
+                <stop offset="45%" stopColor="#000000" stopOpacity={0} />
+                <stop offset="80%" stopColor="#000000" stopOpacity={0.1 * shading} />
+                <stop offset="100%" stopColor="#000000" stopOpacity={0.3 * shading} />
+              </radialGradient>
+              <radialGradient id={`${uid}-sheen`}>
+                <stop offset="0%" stopColor="#ffffff" stopOpacity={0.6 * shading} />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+              </radialGradient>
+              <radialGradient id={`${uid}-shadow`}>
+                <stop offset="0%" stopColor="#000000" stopOpacity={0.3 * shading} />
+                <stop offset="100%" stopColor="#000000" stopOpacity={0} />
+              </radialGradient>
+            </>
+          ) : null}
+        </defs>
+        {framed ? (
+          <rect data-frame="" width={100} height={100} rx={radius} fill={spec.background} />
         ) : null}
-      </defs>
-      {framed ? (
-        <rect data-frame="" width={100} height={100} rx={radius} fill={spec.background} />
-      ) : null}
-      <g clipPath={framed ? `url(#${uid}-frame)` : undefined}>
-        {showImage ? (
-          <g ref={bodyRef} className="aaa-react">
-            <image
-              data-image=""
-              height={100}
-              href={src}
-              preserveAspectRatio="xMidYMid slice"
-              width={100}
-              onError={() => setImageFailed(true)}
-            />
-          </g>
-        ) : (
-          <>
-            <g className="aaa-character">
-              <g transform={placement}>
-                <g ref={squishRef} className="aaa-squish">
-                  <g className="aaa-head">
-                    {clay ? (
-                      <ellipse
-                        className="aaa-shadow"
-                        cx={50}
-                        cy={geometry.bottom + 5}
-                        fill={`url(#${uid}-shadow)`}
-                        rx={30}
-                        ry={5}
-                      />
-                    ) : null}
-                    <g className="aaa-body-motion">
-                      <g ref={bodyRef} className="aaa-react">
-                        {accessoryBehind ? (
-                          <AccessoryShape
-                            accent={spec.accent}
-                            accessory={spec.accessory}
-                            body={spec.body}
-                            geometry={geometry}
-                          />
-                        ) : null}
-                        <path
-                          d={geometry.path}
-                          fill={bodyFill}
-                          stroke={bodyFill}
-                          strokeLinejoin="round"
-                          strokeWidth={8}
+        <g clipPath={framed ? `url(#${uid}-frame)` : undefined}>
+          {showImage ? (
+            <g ref={bodyRef} className="aaa-react">
+              <image
+                data-image=""
+                height={100}
+                href={src}
+                preserveAspectRatio="xMidYMid slice"
+                width={100}
+                onError={() => setImageFailed(true)}
+              />
+            </g>
+          ) : (
+            <>
+              <g className="aaa-character">
+                <g transform={placement}>
+                  <g ref={squishRef} className="aaa-squish">
+                    <g className="aaa-head">
+                      {clay ? (
+                        <ellipse
+                          className="aaa-shadow"
+                          cx={50}
+                          cy={geometry.bottom + 5}
+                          fill={`url(#${uid}-shadow)`}
+                          rx={30}
+                          ry={5}
                         />
-                        {clay ? (
-                          <>
-                            <g className="aaa-rim">
-                              <path d={geometry.path} fill={`url(#${uid}-rim)`} />
-                              <path
-                                d={geometry.path}
-                                fill="none"
-                                mask={`url(#${uid}-outside)`}
-                                stroke="#000000"
-                                strokeLinejoin="round"
-                                strokeOpacity={0.3 * shading}
-                                strokeWidth={8}
-                              />
-                            </g>
-                            <g clipPath={`url(#${uid}-body)`}>
-                              <g className="aaa-look">
-                                <g className="aaa-gaze">
-                                  <ellipse
-                                    className="aaa-sheen"
-                                    cx={39}
-                                    cy={sheenY}
-                                    fill={`url(#${uid}-sheen)`}
-                                    rx={17}
-                                    ry={11}
-                                    transform={`rotate(-24 39 ${sheenY})`}
-                                  />
-                                </g>
+                      ) : null}
+                      <g className="aaa-body-motion">
+                        <g ref={bodyRef} className="aaa-react">
+                          {accessoryBehind ? (
+                            <AccessoryShape
+                              accent={spec.accent}
+                              accessory={spec.accessory}
+                              body={spec.body}
+                              geometry={geometry}
+                            />
+                          ) : null}
+                          <path
+                            d={geometry.path}
+                            fill={bodyFill}
+                            stroke={bodyFill}
+                            strokeLinejoin="round"
+                            strokeWidth={8}
+                          />
+                          {clay ? (
+                            <>
+                              <g className="aaa-rim">
+                                <path d={geometry.path} fill={`url(#${uid}-rim)`} />
+                                <path
+                                  d={geometry.path}
+                                  fill="none"
+                                  mask={`url(#${uid}-outside)`}
+                                  stroke="#000000"
+                                  strokeLinejoin="round"
+                                  strokeOpacity={0.3 * shading}
+                                  strokeWidth={8}
+                                />
                               </g>
-                            </g>
-                          </>
-                        ) : null}
-                        <g ref={faceRef} className="aaa-face">
-                          <g ref={eyesRef} className="aaa-eyes-react" fill={spec.eyeColor}>
-                            <g className="aaa-look">
-                              {content === "initial" ? (
-                                <text
-                                  dominantBaseline="central"
-                                  fontFamily="system-ui, sans-serif"
-                                  fontSize={38}
-                                  fontWeight={700}
-                                  textAnchor="middle"
-                                  x={50}
-                                  y={(geometry.top + geometry.bottom) / 2 + 2}
-                                >
-                                  {name.trim().charAt(0).toUpperCase()}
-                                </text>
-                              ) : (
-                                <g className="aaa-gaze">
-                                  <g className="aaa-eyes-motion">
-                                    <g
-                                      className="aaa-blink"
-                                      style={{
-                                        animationDelay: `${spec.blinkDelay}s`,
-                                        animationDuration: `${spec.blinkDuration * 2}s`,
-                                      }}
-                                    >
-                                      <EyePair
-                                        eyes={spec.eyes}
-                                        gap={geometry.eyeGap}
-                                        id={uid}
-                                        pose={pose}
-                                        y={geometry.eyeY}
-                                      />
-                                    </g>
+                              <g clipPath={`url(#${uid}-body)`}>
+                                <g className="aaa-look">
+                                  <g className="aaa-gaze">
+                                    <ellipse
+                                      className="aaa-sheen"
+                                      cx={39}
+                                      cy={sheenY}
+                                      fill={`url(#${uid}-sheen)`}
+                                      rx={17}
+                                      ry={11}
+                                      transform={`rotate(-24 39 ${sheenY})`}
+                                    />
                                   </g>
                                 </g>
-                              )}
-                            </g>
-                          </g>
-                          {hasMouth ? (
-                            <g className="aaa-look">
-                              <g className="aaa-mouth-rest">
-                                {renderMouth ? (
-                                  renderMouth(slot)
+                              </g>
+                            </>
+                          ) : null}
+                          <g ref={faceRef} className="aaa-face">
+                            <g ref={eyesRef} className="aaa-eyes-react" fill={spec.eyeColor}>
+                              <g className="aaa-look">
+                                {content === "initial" ? (
+                                  <text
+                                    dominantBaseline="central"
+                                    fontFamily="system-ui, sans-serif"
+                                    fontSize={38}
+                                    fontWeight={700}
+                                    textAnchor="middle"
+                                    x={50}
+                                    y={(geometry.top + geometry.bottom) / 2 + 2}
+                                  >
+                                    {name.trim().charAt(0).toUpperCase()}
+                                  </text>
                                 ) : (
-                                  <MouthShape mouth={spec.mouth} slot={slot} />
+                                  <g className="aaa-gaze">
+                                    <g className="aaa-eyes-motion">
+                                      <g
+                                        className="aaa-blink"
+                                        style={{
+                                          animationDelay: `${spec.blinkDelay}s`,
+                                          animationDuration: `${spec.blinkDuration * 2}s`,
+                                        }}
+                                      >
+                                        <EyePair
+                                          eyes={spec.eyes}
+                                          gap={geometry.eyeGap}
+                                          id={uid}
+                                          pose={pose}
+                                          y={geometry.eyeY}
+                                        />
+                                      </g>
+                                    </g>
+                                  </g>
                                 )}
                               </g>
-                              <MoodMouths slot={slot} />
                             </g>
-                          ) : null}
-                          {accessoryOnFace ? frontAccessory : null}
+                            {hasMouth ? (
+                              <g className="aaa-look">
+                                <g className="aaa-mouth-rest">
+                                  {renderMouth ? (
+                                    renderMouth(slot)
+                                  ) : (
+                                    <MouthShape mouth={spec.mouth} slot={slot} />
+                                  )}
+                                </g>
+                                <MoodMouths slot={slot} />
+                              </g>
+                            ) : null}
+                            {accessoryOnFace ? frontAccessory : null}
+                          </g>
+                          {accessoryOnFace ? null : frontAccessory}
                         </g>
-                        {accessoryOnFace ? null : frontAccessory}
                       </g>
                     </g>
                   </g>
                 </g>
               </g>
-            </g>
-            <Glyphs fill={bodyFill} />
-          </>
-        )}
-      </g>
-      {dot ? (
-        <circle
-          data-dot=""
-          cx={85}
-          cy={85}
-          fill={dot === true ? spec.accent : dot}
-          r={11}
-          stroke={framed ? spec.background : undefined}
-          strokeWidth={4}
-        />
-      ) : null}
-    </svg>
+              <Glyphs fill={bodyFill} />
+            </>
+          )}
+        </g>
+        {dot ? (
+          <circle
+            data-dot=""
+            cx={85}
+            cy={85}
+            fill={dot === true ? spec.accent : dot}
+            r={11}
+            stroke={framed ? spec.background : undefined}
+            strokeWidth={4}
+          />
+        ) : null}
+      </svg>
+    </>
   );
 });
